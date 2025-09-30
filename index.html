@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eFootball League Manager</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Mengatur font Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Menyembunyikan spinner input number */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#dc2626', /* Merah sesuai header */
+                        'dark': '#1f2937', /* Gray-800 */
+                        'darker': '#111827', /* Gray-900 */
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-darker text-gray-100 min-h-screen">
+
+    <div id="app-container" class="max-w-xl mx-auto p-2 sm:p-4">
+        
+        <!-- Header -->
+        <header class="text-center mb-4 pt-4">
+            <svg class="w-10 h-10 mx-auto text-primary mb-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14h4"/><path d="M12 17v5"/><path d="M21 9V6a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v3c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2z"/></svg>
+            <h1 id="league-name-display" class="text-3xl font-extrabold text-white">Memuat...</h1>
+            <p class="text-sm text-gray-400">Pengelola Liga EFootball Kustom</p>
+        </header>
+
+        <!-- Konten Utama -->
+        <div class="bg-dark rounded-xl shadow-2xl pb-4">
+            
+            <!-- Navigasi Tab -->
+            <div class="flex justify-around p-2 bg-gray-800 rounded-t-xl sticky top-0 z-10 shadow-lg" id="tab-navigation">
+                <!-- Tab Buttons Rendered Here -->
+            </div>
+
+            <!-- Konten Tab -->
+            <main id="main-content" class="min-h-[400px]">
+                <div class="p-4 text-center text-gray-400">Memuat data liga...</div>
+            </main>
+        </div>
+        
+    </div>
+
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Atur log level Firebase menjadi debug
+        setLogLevel('debug');
+
+        // Global Constants (Disediakan oleh Canvas)
+        const FIREBASE_CONFIG = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const INITIAL_AUTH_TOKEN = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-efootball-app-id';
+
+        // Global State
+        let db;
+        let auth;
+        let userId = null;
+        let leagueData = {
+            leagueName: "Liga EFootball Kustom Saya",
+            teams: [],
+            matches: [],
+        };
+        let appState = 'STANDINGS'; // Default view
+        let leagueRef = null;
+
+        // --- UTILITY ICONS (SVG) ---
+        const icons = {
+            Trophy: '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14h4"/><path d="M12 17v5"/><path d="M21 9V6a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v3c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2z"/></svg>',
+            Users: '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+            Calendar: '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>',
+            Plus: '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
+            Trash: '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>',
+            Refresh: '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M21 22v-6h-6"/><path d="M21 16a9 9 0 0 0-9-9c-.75 0-1.47.1-2.14.29"/><path d="M3 8a9 9 0 0 1 9 9c.75 0 1.47-.1 2.14-.29"/></svg>'
+        };
+
+
+        // --- FIREBASE INITIALIZATION & AUTH ---
+
+        const initializeFirebase = async () => {
+            if (!FIREBASE_CONFIG) {
+                console.error("Firebase config not found.");
+                return;
+            }
+
+            try {
+                const app = initializeApp(FIREBASE_CONFIG);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                await new Promise((resolve, reject) => {
+                    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+                        unsubscribe(); 
+                        if (!user) {
+                            try {
+                                if (INITIAL_AUTH_TOKEN) {
+                                    const userCredential = await signInWithCustomToken(auth, INITIAL_AUTH_TOKEN);
+                                    userId = userCredential.user.uid;
+                                } else {
+                                    const userCredential = await signInAnonymously(auth);
+                                    userId = userCredential.user.uid;
+                                }
+                            } catch (error) {
+                                console.error("Firebase Auth Error:", error);
+                                reject(error);
+                            }
+                        } else {
+                            userId = user.uid;
+                        }
+
+                        leagueRef = doc(db, 'artifacts', APP_ID, 'users', userId, 'efootball_league', 'league_data');
+                        setupDataListener();
+                        resolve();
+                    });
+                });
+
+            } catch (e) {
+                console.error("Firebase Init Error:", e);
+                // Menampilkan pesan error di UI jika inisialisasi gagal
+                document.getElementById('main-content').innerHTML = `<div class="p-4 text-center text-red-500">Error memuat aplikasi. Cek konsol untuk detail.</div>`;
+            }
+        };
+
+        // --- FIRESTORE DATA LISTENER ---
+        const setupDataListener = () => {
+            if (!leagueRef) return;
+
+            onSnapshot(leagueRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    leagueData = {
+                        leagueName: data.leagueName || "Liga EFootball Kustom Saya",
+                        teams: data.teams || [],
+                        matches: data.matches || [],
+                    };
+                    
+                    // Logic penentuan state saat load
+                    if (leagueData.teams.length > 0 && leagueData.matches.length > 0) {
+                        appState = 'STANDINGS';
+                    } else if (leagueData.teams.length > 0 && leagueData.matches.length === 0) {
+                        appState = 'SETUP'; // Kembali ke setup untuk generate jadwal
+                    } else {
+                         appState = 'SETUP';
+                    }
+
+                } else {
+                    // Inisialisasi data liga jika dokumen tidak ditemukan
+                    console.log("Initializing new league document.");
+                    saveLeagueData(leagueData);
+                }
+                renderApp();
+            }, (error) => {
+                console.error("Firestore Listener Error:", error);
+            });
+        };
+        
+        // --- DATA SAVING ---
+        const saveLeagueData = async (updates) => {
+            if (!leagueRef) return;
+            try {
+                // Pastikan untuk menggabungkan data yang ada
+                await setDoc(leagueRef, updates, { merge: true });
+            } catch (e) {
+                console.error("Error saving league data:", e);
+            }
+        };
+
+
+        // --- ALGORITHMS ---
+
+        // Fungsi untuk menghasilkan Jadwal Round Robin (Leg 1 & 2)
+        const generateSchedule = (teams) => {
+            if (teams.length < 2) return [];
+
+            const teamIds = teams.map(t => t.id);
+            const n = teamIds.length;
+            let schedule = [];
+            
+            const isOdd = n % 2 !== 0;
+            const teamsToSchedule = isOdd ? [...teamIds, 'BYE'] : teamIds;
+            const rounds = teamsToSchedule.length - 1;
+            const numTeams = teamsToSchedule.length;
+
+            for (let round = 0; round < rounds; round++) {
+                for (let i = 0; i < numTeams / 2; i++) {
+                    const homeId = teamsToSchedule[i];
+                    const awayId = teamsToSchedule[numTeams - 1 - i];
+
+                    if (homeId !== 'BYE' && awayId !== 'BYE') {
+                        // Leg 1
+                        schedule.push({
+                            id: crypto.randomUUID(),
+                            homeTeamId: homeId,
+                            awayTeamId: awayId,
+                            homeScore: null,
+                            awayScore: null,
+                            status: 'pending',
+                            leg: 1,
+                            round: round + 1,
+                        });
+
+                        // Leg 2 (Dibalik)
+                        schedule.push({
+                            id: crypto.randomUUID(),
+                            homeTeamId: awayId,
+                            awayTeamId: homeId,
+                            homeScore: null,
+                            awayScore: null,
+                            status: 'pending',
+                            leg: 2,
+                            round: round + 1 + rounds,
+                        });
+                    }
+                }
+
+                // Rotasi tim (kecuali tim pertama)
+                const firstTeam = teamsToSchedule[0];
+                const rest = teamsToSchedule.slice(1);
+                const last = rest.pop();
+                teamsToSchedule.splice(1, 0, last);
+                teamsToSchedule[0] = firstTeam;
+            }
+
+            return schedule;
+        };
+
+
+        // Fungsi untuk menghitung Klasemen (Menggunakan P, W, D, L, F, A, D, Pts)
+        const calculateStandings = (teams, matches) => {
+            if (teams.length === 0 || matches.length === 0) return [];
+
+            const stats = teams.reduce((acc, team) => {
+                acc[team.id] = {
+                    ...team,
+                    P: 0, W: 0, D: 0, L: 0, F: 0, A: 0, Pts: 0, GD: 0 // P=Played, F=For, A=Against, D=Difference
+                };
+                return acc;
+            }, {});
+
+            matches.filter(m => m.status === 'completed').forEach(match => {
+                const home = stats[match.homeTeamId];
+                const away = stats[match.awayTeamId];
+
+                if (!home || !away) return; 
+
+                const homeScore = parseInt(match.homeScore);
+                const awayScore = parseInt(match.awayScore);
+
+                home.P += 1;
+                away.P += 1;
+
+                home.F += homeScore;
+                home.A += awayScore;
+                away.F += awayScore;
+                away.A += homeScore;
+
+                if (homeScore > awayScore) {
+                    home.W += 1; home.Pts += 3; away.L += 1;
+                } else if (homeScore < awayScore) {
+                    home.L += 1; away.W += 1; away.Pts += 3;
+                } else {
+                    home.D += 1; home.Pts += 1; away.D += 1; away.Pts += 1;
+                }
+
+                home.GD = home.F - home.A;
+                away.GD = away.F - away.A;
+            });
+
+            return Object.values(stats).sort((a, b) => {
+                if (b.Pts !== a.Pts) return b.Pts - a.Pts;
+                if (b.GD !== a.GD) return b.GD - a.GD;
+                return b.F - a.F;
+            });
+        };
+
+        // --- HANDLERS ---
+        
+        const handleAddTeam = () => {
+            const input = document.getElementById('new-team-name');
+            const newTeamName = input.value.trim();
+            if (newTeamName === '') return;
+
+            const newTeam = {
+                id: crypto.randomUUID(),
+                name: newTeamName,
+            };
+            
+            // Reset jadwal jika tim baru ditambahkan (memaksa regenerasi)
+            const newTeams = [...leagueData.teams, newTeam];
+            input.value = '';
+            
+            // Update state dan simpan ke DB
+            leagueData.teams = newTeams;
+            leagueData.matches = []; 
+            saveLeagueData({ teams: newTeams, matches: [] }); 
+        };
+
+        const handleRemoveTeam = (teamId) => {
+            const newTeams = leagueData.teams.filter(t => t.id !== teamId);
+            if (newTeams.length < 2 && leagueData.teams.length > 0) {
+                 // Tidak perlu pesan error, biarkan user hapus tim, tapi jadwal akan di-reset
+            }
+
+            // Update state dan simpan ke DB
+            leagueData.teams = newTeams;
+            leagueData.matches = [];
+            saveLeagueData({ teams: newTeams, matches: [] });
+        };
+
+        const handleGenerateSchedule = () => {
+            if (leagueData.teams.length < 2) {
+                console.log("Dibutuhkan minimal 2 tim untuk membuat jadwal.");
+                return;
+            }
+            const newMatches = generateSchedule(leagueData.teams);
+            
+            // Update state dan simpan ke DB
+            leagueData.matches = newMatches;
+            saveLeagueData({ matches: newMatches }).then(() => {
+                appState = 'SCHEDULE';
+                renderApp();
+            });
+        };
+
+        const handleScoreUpdate = (matchId, isHome, value) => {
+            const score = value === '' ? null : Math.max(0, parseInt(value) || 0);
+            
+            const updatedMatches = leagueData.matches.map(match => {
+                if (match.id === matchId) {
+                    let newMatch = { ...match };
+                    
+                    if (isHome) {
+                        newMatch.homeScore = score;
+                    } else {
+                        newMatch.awayScore = score;
+                    }
+
+                    if (newMatch.homeScore !== null && newMatch.awayScore !== null) {
+                        newMatch.status = 'completed';
+                    } else {
+                        newMatch.status = 'pending';
+                    }
+
+                    return newMatch;
+                }
+                return match;
+            });
+
+            leagueData.matches = updatedMatches;
+            saveLeagueData({ matches: updatedMatches });
+        };
+
+        const handleUpdateLeagueName = (e) => {
+            leagueData.leagueName = e.target.value;
+            saveLeagueData({ leagueName: e.target.value });
+        };
+
+        // --- RENDER FUNCTIONS ---
+
+        const renderTabButtons = () => {
+            const tabs = [
+                { state: 'SETUP', label: 'Pengaturan Tim', icon: icons.Users },
+                { state: 'SCHEDULE', label: 'Jadwal & Skor', icon: icons.Calendar },
+                { state: 'STANDINGS', label: 'Klasemen', icon: icons.Trophy },
+            ];
+
+            const navElement = document.getElementById('tab-navigation');
+            navElement.innerHTML = tabs.map(tab => `
+                <button
+                    class="flex-1 p-3 text-sm font-semibold rounded-t-lg transition-colors flex justify-center items-center space-x-2 
+                    ${appState === tab.state ? 'bg-primary text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}"
+                    onclick="window.setAppState('${tab.state}')"
+                >
+                    ${tab.icon}
+                    <span>${tab.label}</span>
+                </button>
+            `).join('');
+        };
+        
+        window.setAppState = (newState) => {
+            appState = newState;
+            renderApp();
+        };
+
+        const renderSetupView = () => {
+            const teams = leagueData.teams;
+            let html = `
+                <div class="space-y-6 p-4">
+                    <h2 class="text-2xl font-bold text-primary">Pengaturan Liga</h2>
+
+                    <!-- Input Nama Liga -->
+                    <div class="p-4 bg-gray-800 rounded-lg shadow-md">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Nama Liga</label>
+                        <input
+                            type="text"
+                            value="${leagueData.leagueName}"
+                            onchange="window.handleUpdateLeagueName(event)"
+                            onblur="window.handleUpdateLeagueName(event)"
+                            placeholder="Cth: Liga EFootball Pro '26"
+                            class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-primary focus:border-primary"
+                        />
+                        <p class="text-xs mt-1 text-gray-400">ID Pengguna: ${userId ? userId.substring(0, 8) + '...' : 'Memuat...'}</p>
+                    </div>
+
+                    <!-- Manajemen Tim -->
+                    <div class="p-4 bg-gray-800 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold mb-3 text-gray-100 flex justify-between items-center">
+                            Daftar Tim (${teams.length})
+                            <button
+                                onclick="window.handleGenerateSchedule()"
+                                ${teams.length < 2 ? 'disabled' : ''}
+                                class="px-3 py-1 text-sm font-semibold rounded-full transition-colors flex items-center space-x-1 ${
+                                    teams.length < 2 ? 'bg-gray-600 text-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
+                                }"
+                            >
+                                ${icons.Refresh}
+                                <span>Buat Jadwal</span>
+                            </button>
+                        </h3>
+                        
+                        <!-- Tambah Tim Form -->
+                        <div class="flex space-x-2 mb-4">
+                            <input
+                                type="text"
+                                id="new-team-name"
+                                placeholder="Masukkan Nama Tim Baru"
+                                class="flex-grow p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400"
+                                onkeypress="if(event.key === 'Enter') { window.handleAddTeam(); }"
+                            />
+                            <button
+                                onclick="window.handleAddTeam()"
+                                class="p-3 bg-primary rounded-lg text-white hover:bg-red-700 transition-colors shadow-md"
+                            >
+                                ${icons.Plus}
+                            </button>
+                        </div>
+
+                        <!-- Daftar Tim -->
+                        <ul class="space-y-2 max-h-48 overflow-y-auto pr-2">
+                            ${teams.length === 0 ? 
+                                '<p class="text-gray-500 text-center py-4">Belum ada tim terdaftar. Tambahkan minimal 2 tim.</p>' :
+                                teams.map(team => `
+                                    <li key="${team.id}" class="flex justify-between items-center p-3 bg-gray-700 rounded-lg shadow-sm border border-gray-600">
+                                        <span class="text-white font-medium">${team.name}</span>
+                                        <button
+                                            onclick="window.handleRemoveTeam('${team.id}')"
+                                            class="text-red-400 p-1 rounded-full hover:bg-red-900 transition-colors"
+                                        >
+                                            ${icons.Trash}
+                                        </button>
+                                    </li>
+                                `).join('')
+                            }
+                        </ul>
+                    </div>
+
+                </div>
+            `;
+            document.getElementById('main-content').innerHTML = html;
+        };
+
+        const renderScheduleView = () => {
+            const teams = leagueData.teams;
+            const matches = leagueData.matches;
+            
+            if (matches.length === 0) {
+                return `
+                    <div class="p-4 text-center space-y-4">
+                        <p class="text-lg text-yellow-500">Jadwal belum dibuat.</p>
+                        <button
+                            onclick="window.handleGenerateSchedule()"
+                            ${teams.length < 2 ? 'disabled' : ''}
+                            class="px-6 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors shadow-lg disabled:bg-gray-600 disabled:cursor-not-allowed"
+                        >
+                            ${teams.length < 2 ? 'Tambah Tim Dulu' : 'Buat Jadwal Sekarang'}
+                        </button>
+                    </div>
+                `;
+            }
+
+            const teamNameMap = teams.reduce((acc, team) => {
+                acc[team.id] = team.name;
+                return acc;
+            }, {});
+
+            const matchesByRound = matches.reduce((acc, match) => {
+                const roundKey = `Pekan ${match.round}`;
+                if (!acc[roundKey]) acc[roundKey] = [];
+                acc[roundKey].push(match);
+                return acc;
+            }, {});
+            
+            let html = `
+                <div class="space-y-6 p-4">
+                    <h2 class="text-2xl font-bold text-primary">Jadwal Pertandingan</h2>
+            `;
+            
+            for (const round in matchesByRound) {
+                html += `
+                    <div class="p-4 bg-gray-800 rounded-lg shadow-lg">
+                        <h3 class="text-xl font-semibold mb-3 text-gray-100">${round}</h3>
+                        <div class="space-y-3">
+                            ${matchesByRound[round].map(match => {
+                                const isCompleted = match.status === 'completed';
+                                return `
+                                    <div
+                                        class="flex items-center justify-between p-3 rounded-lg border-l-4 ${
+                                            isCompleted ? 'bg-green-900/50 border-green-500' : 'bg-gray-700 border-yellow-500'
+                                        }"
+                                    >
+                                        <span class="w-1/3 text-sm text-right font-medium text-white truncate">
+                                            ${teamNameMap[match.homeTeamId] || 'Tim Hilang'}
+                                        </span>
+
+                                        <div class="flex items-center justify-center w-1/3 space-x-1">
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value="${match.homeScore === null ? '' : match.homeScore}"
+                                                onchange="window.handleScoreUpdate('${match.id}', true, this.value)"
+                                                class="w-12 p-1 text-center bg-gray-600 rounded text-lg font-bold text-white"
+                                            />
+                                            <span class="text-xl font-bold text-gray-300">-</span>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value="${match.awayScore === null ? '' : match.awayScore}"
+                                                onchange="window.handleScoreUpdate('${match.id}', false, this.value)"
+                                                class="w-12 p-1 text-center bg-gray-600 rounded text-lg font-bold text-white"
+                                            />
+                                        </div>
+
+                                        <span class="w-1/3 text-sm text-left font-medium text-white truncate">
+                                            ${teamNameMap[match.awayTeamId] || 'Tim Hilang'}
+                                        </span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <button
+                    onclick="window.resetSchedule()" 
+                    class="w-full py-2 mt-4 bg-red-700 text-white font-semibold rounded-lg hover:bg-red-800 transition-colors shadow-lg flex items-center justify-center space-x-2"
+                >
+                    ${icons.Trash}
+                    <span>Hapus & Reset Jadwal</span>
+                </button>
+                </div>
+            `;
+
+            document.getElementById('main-content').innerHTML = html;
+        };
+
+        window.resetSchedule = () => {
+             leagueData.matches = [];
+             saveLeagueData({ matches: [] }).then(() => {
+                appState = 'SETUP';
+                renderApp();
+             });
+        }
+
+        const renderStandingsView = () => {
+            const teams = leagueData.teams;
+            const standings = calculateStandings(teams, leagueData.matches);
+
+            if (standings.length === 0) {
+                return `
+                    <div class="p-4 text-center">
+                        <p class="text-lg text-yellow-500">Tambahkan tim dan buat jadwal untuk melihat klasemen.</p>
+                        <button
+                            onclick="window.setAppState('SETUP')"
+                            class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-red-700"
+                        >
+                            Kembali ke Pengaturan
+                        </button>
+                    </div>
+                `;
+            }
+
+            const numTeams = standings.length;
+            const PROMOTION_ZONE = 2; // Peringkat 1 dan 2 (Hijau)
+            const RELEGATION_ZONE = 2; // 2 tim terbawah (Merah)
+            
+            // Fungsi untuk menentukan style baris berdasarkan peringkat
+            const getRowStyle = (index) => {
+                const rank = index + 1;
+                if (rank <= PROMOTION_ZONE) {
+                    // Zona Promosi (Hijau)
+                    return 'bg-green-700/50 text-white';
+                }
+                if (rank > numTeams - RELEGATION_ZONE) {
+                    // Zona Degradasi (Merah Gelap)
+                    return 'bg-red-700/50 text-white';
+                }
+                // Zona Netral (Abu-abu gelap)
+                return 'bg-gray-700/70 text-gray-200';
+            };
+
+            let tableRows = standings.map((team, index) => {
+                const rank = index + 1;
+                const rowClass = getRowStyle(index);
+                return `
+                    <tr class="${rowClass} border-b border-gray-700 transition-colors">
+                        <td class="py-2 px-1 text-center font-bold text-base">${rank}</td>
+                        <td class="py-2 px-2 font-medium truncate">${team.name}</td>
+                        <td class="py-2 px-1 text-center">${team.P}</td>
+                        <td class="py-2 px-1 text-center">${team.W}</td>
+                        <td class="py-2 px-1 text-center">${team.D}</td>
+                        <td class="py-2 px-1 text-center">${team.L}</td>
+                        <td class="py-2 px-1 text-center">${team.F}</td>
+                        <td class="py-2 px-1 text-center">${team.A}</td>
+                        <td class="py-2 px-1 text-center font-semibold">${team.GD}</td>
+                        <td class="py-2 px-1 text-center font-bold text-lg">${team.Pts}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            let html = `
+                <div class="p-4 space-y-4 overflow-x-auto">
+                    <h2 class="text-2xl font-bold text-primary">Klasemen Liga</h2>
+                    <div class="bg-gray-800 rounded-lg shadow-xl overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-700 text-left text-sm border-separate border-spacing-0">
+                            <thead class="bg-primary sticky top-0 text-white">
+                                <tr>
+                                    <th class="py-2 px-1 text-center font-bold tracking-wider">P</th>
+                                    <th class="py-2 px-2 font-bold tracking-wider">Team</th>
+                                    <th class="py-2 px-1 text-center font-bold tracking-wider">P</th>
+                                    <th class="py-2 px-1 text-center font-bold tracking-wider">W</th>
+                                    <th class="py-2 px-1 text-center font-bold tracking-wider">D</th>
+                                    <th class="py-2 px-1 text-center font-bold tracking-wider">L</th>
+                                    <th class="py-2 px-1 text-center font-bold tracking-wider">F</th>
+                                    <th class="py-2 px-1 text-center font-bold tracking-wider">A</th>
+                                    <th class="py-2 px-1 text-center font-bold tracking-wider">D</th>
+                                    <th class="py-2 px-1 text-center font-bold tracking-wider">Pts</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2">
+                        **P:** Posisi, **P:** Main, **W:** Menang, **D:** Seri, **L:** Kalah, **F:** Gol Memasukkan, **A:** Gol Kebobolan, **D:** Selisih Gol, **Pts:** Poin.
+                    </p>
+                </div>
+            `;
+            document.getElementById('main-content').innerHTML = html;
+        };
+
+
+        // --- MAIN APPLICATION RENDERER ---
+        const renderApp = () => {
+            // Update Header
+            document.getElementById('league-name-display').textContent = leagueData.leagueName;
+            
+            // Render Tabs
+            renderTabButtons();
+
+            // Render Current View
+            const mainContent = document.getElementById('main-content');
+            switch (appState) {
+                case 'SETUP':
+                    renderSetupView();
+                    break;
+                case 'SCHEDULE':
+                    renderScheduleView();
+                    break;
+                case 'STANDINGS':
+                    renderStandingsView();
+                    break;
+                default:
+                    renderSetupView();
+                    break;
+            }
+        };
+
+        // Export handlers ke window agar bisa diakses dari inline HTML
+        window.handleUpdateLeagueName = handleUpdateLeagueName;
+        window.handleAddTeam = handleAddTeam;
+        window.handleRemoveTeam = handleRemoveTeam;
+        window.handleGenerateSchedule = handleGenerateSchedule;
+        window.handleScoreUpdate = handleScoreUpdate;
+
+        // Start the application
+        window.onload = initializeFirebase;
+    </script>
+</body>
+</html>
+
