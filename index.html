@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Way Kanan Efootball League Season 1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Mengatur font agar lebih bersih dan modern */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+        }
+        .tab-button.active {
+            border-bottom: 3px solid #10b981; /* Warna hijau (Emerald 500) */
+            color: #10b981;
+            font-weight: 600;
+        }
+        /* Styling untuk tabel yang responsif */
+        .table-container {
+            overflow-x: hidden; 
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            white-space: nowrap; /* Mencegah konten tabel wrap */
+        }
+        .header-cell {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+        .header-cell .sort-icon {
+            margin-left: 0.25rem;
+            transition: transform 0.2s;
+        }
+        /* Modal Backdrop */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+
+        /* Penyesuaian khusus untuk membuat tabel lebih rapat di mobile */
+        @media (max-width: 640px) {
+            .klasemen-table th, .klasemen-table td {
+                padding-left: 0.5rem; /* px-2 */
+                padding-right: 0.5rem; /* px-2 */
+            }
+            .klasemen-table th:nth-child(2), .klasemen-table td:nth-child(2) {
+                /* Kolom Tim lebih lebar */
+                padding-left: 0.75rem; /* px-3 */
+                padding-right: 0.75rem; /* px-3 */
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl p-4 md:p-8">
+        <h1 class="text-3xl font-extrabold text-gray-900 mb-4 text-center">
+            <span class="text-emerald-600">WAY KANAN EFOOTBALL LEAGUE</span> Season 1
+        </h1>
+        
+        <!-- Area Admin Login & Status -->
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+             <div id="admin-status" class="text-sm font-medium text-gray-600">
+                <span id="auth-status-text">Memuat...</span> | Status Admin: <span id="admin-indicator" class="text-red-500 font-semibold">Memeriksa...</span>
+            </div>
+            <button id="admin-login-btn" onclick="openLoginModal()" class="px-3 py-1 text-sm font-medium text-white bg-gray-500 rounded-lg hover:bg-gray-600 transition shadow-md hidden" disabled>
+                Login Admin
+            </button>
+        </div>
+
+        <!-- Area Tombol Tab -->
+        <div class="flex border-b border-gray-200 mb-6">
+             <button id="tab-home" class="tab-button flex-1 py-3 px-1 text-center text-gray-600 hover:text-emerald-600 transition duration-150" onclick="showTab('home-content')">
+                Home
+            </button>
+            <button id="tab-klasemen" class="tab-button active flex-1 py-3 px-1 text-center text-gray-600 hover:text-emerald-600 transition duration-150" onclick="showTab('klasemen-content')">
+                Klasemen
+            </button>
+            <button id="tab-pertandingan" class="tab-button flex-1 py-3 px-1 text-center text-gray-600 hover:text-emerald-600 transition duration-150" onclick="showTab('pertandingan-content')">
+                Jadwal & Hasil
+            </button>
+        </div>
+
+        <!-- Konten HOME (Admin Only) -->
+        <div id="home-content" class="tab-content hidden">
+            <div id="home-admin-access" class="hidden">
+                 <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Manajemen Liga</h2>
+                 
+                 <!-- Liga Management (simplified - name change only) -->
+                 <div class="bg-gray-50 p-4 rounded-lg shadow-inner mb-6">
+                    <label for="league-name-input" class="block text-lg font-medium text-gray-700 mb-2">Nama Liga & Musim</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="league-name-input" class="flex-grow border-2 border-gray-300 rounded-lg p-3 focus:border-emerald-500 focus:ring-emerald-500" value="Way Kanan Efootball League Season 1" />
+                        <button onclick="saveLeagueName()" class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition shadow-md">Simpan</button>
+                    </div>
+                    <p id="league-name-message" class="text-xs text-green-600 mt-1 hidden">Nama liga berhasil disimpan!</p>
+                 </div>
+
+                 <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Manajemen Tim</h2>
+
+                 <!-- Add Team -->
+                 <div class="bg-gray-50 p-4 rounded-lg shadow-inner mb-6">
+                    <label for="new-team-name" class="block text-lg font-medium text-gray-700 mb-2">Tambah Tim Baru</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="new-team-name" class="flex-grow border-2 border-gray-300 rounded-lg p-3 focus:border-emerald-500 focus:ring-emerald-500" placeholder="Masukkan nama tim" />
+                        <button onclick="addTeam()" class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition shadow-md">Tambah Tim</button>
+                    </div>
+                 </div>
+
+                 <!-- Team List -->
+                 <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Daftar Tim (<span id="team-count">0</span>)</h3>
+                    <ul id="team-list" class="space-y-2 max-h-64 overflow-y-auto">
+                        <!-- Team list will be rendered here -->
+                    </ul>
+                    <button onclick="resetLeagueData()" class="mt-4 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition shadow-md">RESET SEMUA DATA LIGA</button>
+                    <p class="text-xs text-red-500 mt-1">PERINGATAN: Ini akan menghapus semua skor dan tim!</p>
+                 </div>
+            </div>
+
+            <div id="home-public-access" class="p-8 text-center text-gray-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                </svg>
+                <p>Hanya Admin yang dapat mengakses halaman ini untuk mengatur liga dan tim.</p>
+            </div>
+        </div>
+
+        <!-- Konten Klasemen (Default Aktif) -->
+        <div id="klasemen-content" class="tab-content">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Klasemen Sementara</h2>
+            <div id="loading-klasemen" class="text-center text-gray-500 py-8">Memuat data klasemen...</div>
+            <div class="table-container hidden" id="klasemen-container">
+                <table id="klasemen-table" class="min-w-full divide-y divide-gray-200 klasemen-table">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                #
+                            </th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Tim
+                            </th>
+                            <th scope="col" class="header-cell hidden sm:table-cell px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" data-sort-by="M">
+                                M
+                            </th>
+                            <th scope="col" class="header-cell px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" data-sort-by="W">
+                                W
+                            </th>
+                            <th scope="col" class="header-cell px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" data-sort-by="D">
+                                D
+                            </th>
+                            <th scope="col" class="header-cell px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" data-sort-by="L">
+                                L
+                            </th>
+                            <th scope="col" class="header-cell px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" data-sort-by="GF">
+                                GF
+                            </th>
+                            <th scope="col" class="header-cell hidden sm:table-cell px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" data-sort-by="GA">
+                                GA
+                            </th>
+                            <th scope="col" class="header-cell px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" data-sort-by="GD">
+                                GD
+                            </th>
+                            <th scope="col" class="header-cell px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider active-sort" data-sort-by="Pts">
+                                Pts
+                                <span class="sort-icon">&#9660;</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="klasemen-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Data Klasemen akan di-inject di sini -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Konten Pertandingan -->
+        <div id="pertandingan-content" class="tab-content hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Jadwal & Hasil Pertandingan</h2>
+            
+            <!-- Dropdown untuk memilih Babak (di mobile) -->
+            <div class="md:hidden mb-4">
+                <label for="round-select" class="block text-sm font-medium text-gray-700 mb-1">Pilih Babak</label>
+                <select id="round-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md shadow-sm">
+                    <!-- Opsi akan di-generate di sini -->
+                </select>
+            </div>
+
+            <!-- Area Tab Babak (di desktop) -->
+            <div id="round-tabs" class="hidden md:flex flex-wrap border-b border-gray-200 mb-4">
+                <!-- Tombol Babak akan di-generate di sini -->
+            </div>
+            
+            <div class="flex justify-end mb-4">
+                <button onclick="generateMatchesModal()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-md" id="generate-matches-btn" disabled>
+                    Generate Match
+                </button>
+            </div>
+
+            <!-- Konten Pertandingan per Babak -->
+            <div id="matches-container" class="space-y-4">
+                <div class="text-center text-gray-500 py-8">Memuat data pertandingan...</div>
+                <!-- Detail Pertandingan akan di-inject di sini -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Login Admin (Tersembunyi secara default) -->
+    <div id="login-modal" class="modal-backdrop hidden">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm mx-4">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Akses Admin</h3>
+            <p id="login-message" class="text-sm text-red-500 mb-3 hidden">Gagal Login. Coba lagi.</p>
+            
+            <div class="space-y-4">
+                <p class="text-sm text-gray-600">Tekan "Daftar sebagai Admin" untuk mendapatkan ID Admin unik Anda. Anda akan selalu menjadi Admin setelahnya.</p>
+                <p class="text-sm font-bold text-emerald-600">ID Anda (UID): <span id="current-uid">Belum masuk</span></p>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeLoginModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+                    Tutup
+                </button>
+                <button onclick="signInAdmin()" class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition shadow-md">
+                    Daftar sebagai Admin
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Input Skor (Tersembunyi secara default) -->
+    <div id="score-modal" class="modal-backdrop hidden">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm mx-4">
+            <h3 class="text-xl font-bold text-gray-800 mb-4" id="modal-title">Input Skor Pertandingan</h3>
+            
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <label id="team1-label" class="font-semibold text-gray-700 w-1/2 pr-2 truncate">Tim 1</label>
+                    <input type="number" id="score1-input" min="0" value="0" class="w-1/4 text-center border-2 border-gray-300 rounded-lg p-2 focus:border-emerald-500 focus:ring-emerald-500" />
+                </div>
+                
+                <div class="flex justify-between items-center">
+                    <label id="team2-label" class="font-semibold text-gray-700 w-1/2 pr-2 truncate">Tim 2</label>
+                    <input type="number" id="score2-input" min="0" value="0" class="w-1/4 text-center border-2 border-gray-300 rounded-lg p-2 focus:border-emerald-500 focus:ring-emerald-500" />
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeModal('score-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+                    Batal
+                </button>
+                <button onclick="saveScore()" class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition shadow-md">
+                    Simpan Hasil
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Generate Matches (Tersembunyi secara default) -->
+    <div id="generate-modal" class="modal-backdrop hidden">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm mx-4">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Generate Jadwal Pertandingan</h3>
+            
+            <p class="text-sm text-gray-600 mb-4">
+                Ini akan membuat jadwal liga penuh dengan sistem *Round Robin* (setiap tim bertemu dua kali).
+            </p>
+            <p class="text-sm font-semibold text-red-500 mb-4">
+                PERINGATAN: Ini akan menghapus semua jadwal pertandingan yang sudah ada!
+            </p>
+            
+            <div class="flex justify-between space-x-3 mt-6">
+                <button onclick="closeModal('generate-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+                    Batal
+                </button>
+                <button onclick="generateMatches()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-md">
+                    Generate Jadwal
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- KONFIGURASI FIREBASE ANDA ---
+        const FIREBASE_CONFIG = {
+            const firebaseConfig = {
+  apiKey: "AIzaSyBkCYgC6tfPS5HwmBWcJ1TkIY5H8p_gkWU",
+  authDomain: "waykananefootball.firebaseapp.com",
+  projectId: "waykananefootball",
+  storageBucket: "waykananefootball.firebasestorage.app",
+  messagingSenderId: "503767369083",
+  appId: "1:503767369083:web:b51a37d9f49ce70a8b29de",
+  measurementId: "G-TDB6BKM9EM"
+};
+            apiKey: "AIzaSyD-...", 
+            authDomain: "way-kanan-efootball.firebaseapp.com",
+            projectId: "way-kanan-efootball",
+            storageBucket: "way-kanan-efootball.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef123456"
+        };
+        const PROJECT_ID = FIREBASE_CONFIG.projectId; 
+
+        // --- PATH DATA FIREBASE (JANGAN DIUBAH) ---
+        const ADMIN_DOC_PATH = `admin_data/admin_list`; 
+        const LEAGUE_DATA_PATH = `league_data/current_season`; // Path baru untuk menyimpan semua data liga
+        
+        let db, auth;
+        let userId = null;
+        let isAdmin = false;
+        
+        // Data Global yang dimuat dari Firestore
+        let leagueName = "Way Kanan Efootball League Season 1";
+        let teamData = []; 
+        let pertandinganData = {}; 
+        
+        let klasemenData = [];
+        let currentSort = { column: 'Pts', direction: 'desc' };
+        let activeRound = 1;
+        let activeMatch = null; 
+
+        // --- FIREBASE INIT & AUTH ---
+        
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(FIREBASE_CONFIG); 
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                await signInAnonymously(auth);
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        document.getElementById('auth-status-text').textContent = `ID Pengguna: ${userId.substring(0, 8)}...`; 
+                        document.getElementById('current-uid').textContent = userId;
+                        document.getElementById('admin-login-btn').classList.remove('hidden');
+                        
+                        checkAdminStatus();
+                        setupDataListeners();
+                    } else {
+                        document.getElementById('auth-status-text').textContent = 'Belum Masuk';
+                        document.getElementById('admin-indicator').textContent = 'Gagal';
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                document.getElementById('auth-status-text').textContent = 'Error Firebase';
+                document.getElementById('admin-indicator').textContent = 'Gagal';
+                document.getElementById('loading-klasemen').textContent = 'Gagal memuat. Pastikan Anda sudah memasukkan konfigurasi Firebase yang benar!';
+            }
+        }
+
+        async function checkAdminStatus() {
+             if (!db || !userId) return;
+
+             const adminDocRef = doc(db, ADMIN_DOC_PATH);
+
+             onSnapshot(adminDocRef, (docSnap) => {
+                 const adminList = docSnap.exists() ? docSnap.data().uids || [] : [];
+                 isAdmin = adminList.includes(userId);
+                 updateAdminStatus(isAdmin);
+                 updateHomeTabVisibility();
+                 renderPertandingan();
+             }, (error) => {
+                console.error("Error checking admin status:", error);
+                updateAdminStatus(false);
+             });
+        }
+
+        async function signInAdmin() {
+            if (!db || !userId) return console.error("Firebase atau User ID belum siap.");
+
+            try {
+                const adminDocRef = doc(db, ADMIN_DOC_PATH);
+                
+                const currentAdminDoc = await getDoc(adminDocRef);
+                const currentUids = currentAdminDoc.exists() ? currentAdminDoc.data().uids || [] : [];
+                
+                if (!currentUids.includes(userId)) {
+                    currentUids.push(userId);
+                }
+                
+                await setDoc(adminDocRef, { uids: currentUids }, { merge: true });
+
+                closeLoginModal();
+            } catch (error) {
+                console.error("Error signing in as admin:", error);
+                document.getElementById('login-message').textContent = 'Gagal mendaftarkan sebagai Admin.';
+                document.getElementById('login-message').classList.remove('hidden');
+            }
+        }
+
+        function logoutAdmin() {
+            if (userId && isAdmin) {
+                 alert("Untuk menghapus status admin secara permanen, hapus UID ini dari dokumen admin_data/admin_list di Firebase Console.");
+                 // Di sini kita tidak menghapus dari Firestore, hanya di UI.
+            }
+            updateAdminStatus(false);
+            isAdmin = false;
+            updateHomeTabVisibility();
+            renderPertandingan();
+        }
+
+        // --- LOGIKA DATA FIREBASE & PERSISTENSI ---
+
+        async function setupDataListeners() {
+            if (!db) return;
+
+            const leagueDocRef = doc(db, LEAGUE_DATA_PATH);
+
+            onSnapshot(leagueDocRef, async (docSnap) => {
+                const data = docSnap.data();
+
+                if (!docSnap.exists() || !data || !data.teams) {
+                    // Jika data kosong, inisialisasi tim dan jadwal awal
+                    console.log("Data liga kosong di Firestore, menginisialisasi...");
+                    await initializeLeagueData();
+                    return; 
+                } 
+
+                // Muat Data dari Firestore
+                leagueName = data.leagueName || "Way Kanan Efootball League Season 1";
+                teamData = data.teams || []; 
+                pertandinganData = data.matches ? JSON.parse(data.matches) : {};
+
+                // Update Judul
+                document.getElementsByTagName('title')[0].textContent = leagueName;
+                document.getElementById('league-name-input').value = leagueName;
+                document.querySelector('h1').innerHTML = `<span class="text-emerald-600">${leagueName.split(' ')[0]}</span> ${leagueName.substring(leagueName.indexOf(' ') + 1)}`;
+                
+                // Sembunyikan loading dan tampilkan tabel
+                document.getElementById('loading-klasemen').classList.add('hidden');
+                document.getElementById('klasemen-container').classList.remove('hidden');
+
+                // Lakukan perhitungan dan render UI
+                calculateKlasemen();
+                renderTeamList();
+                renderPertandingan();
+
+            }, (error) => {
+                console.error("Error listening to league data:", error);
+            });
+        }
+        
+        async function initializeLeagueData() {
+            const matchesArray = parseCSV(initialPertandinganCSV);
+            const teamsArray = parseCSV(initialKlasemenCSV).map(t => t.Tim);
+            
+            let initialMatches = {};
+            matchesArray.forEach(match => {
+                const babak = match.Babak;
+                if (!initialMatches[babak]) initialMatches[babak] = [];
+                match['Skor 1'] = match['Skor 1'] !== '' ? parseInt(match['Skor 1'], 10) : '';
+                match['Skor 2'] = match['Skor 2'] !== '' ? parseInt(match['Skor 2'], 10) : '';
+                match.id = `${babak}-${initialMatches[babak].length}`; 
+                initialMatches[babak].push(match);
+            });
+
+            await setDoc(doc(db, LEAGUE_DATA_PATH), {
+                leagueName: "Way Kanan Efootball League Season 1",
+                teams: teamsArray,
+                matches: JSON.stringify(initialMatches),
+                lastUpdated: new Date().toISOString()
+            });
+        }
+        
+        async function updateLeagueData(updates) {
+            if (!db) return console.error("Firestore belum siap.");
+            
+            try {
+                const leagueDocRef = doc(db, LEAGUE_DATA_PATH);
+                
+                // Pastikan 'matches' selalu di-string-ify jika ada perubahan skor atau jadwal
+                if (updates.matches && typeof updates.matches !== 'string') {
+                    updates.matches = JSON.stringify(updates.matches);
+                }
+                
+                updates.lastUpdated = new Date().toISOString();
+                
+                await setDoc(leagueDocRef, updates, { merge: true });
+                console.log("Data liga berhasil disimpan ke Firestore.");
+            } catch (error) {
+                console.error("Gagal menyimpan data ke Firestore:", error);
+                // Ganti alert dengan notifikasi UI yang lebih baik jika ini adalah aplikasi produksi
+                alert("Gagal menyimpan data ke database. Cek izin Firestore Anda.");
+            }
+        }
+
+        // --- HOME TAB LOGIC (ADMIN) ---
+        
+        function updateHomeTabVisibility() {
+            const homeAdmin = document.getElementById('home-admin-access');
+            const homePublic = document.getElementById('home-public-access');
+            const generateBtn = document.getElementById('generate-matches-btn');
+
+            if (isAdmin) {
+                homeAdmin.classList.remove('hidden');
+                homePublic.classList.add('hidden');
+                generateBtn.removeAttribute('disabled');
+            } else {
+                homeAdmin.classList.add('hidden');
+                homePublic.classList.remove('hidden');
+                generateBtn.setAttribute('disabled', 'true');
+            }
+        }
+        
+        function saveLeagueName() {
+            if (!isAdmin) return;
+            const newName = document.getElementById('league-name-input').value.trim();
+            if (newName && newName !== leagueName) {
+                leagueName = newName;
+                updateLeagueData({ leagueName: newName });
+                
+                const msg = document.getElementById('league-name-message');
+                msg.classList.remove('hidden');
+                setTimeout(() => msg.classList.add('hidden'), 3000);
+            }
+        }
+
+        function addTeam() {
+            if (!isAdmin) return;
+            const newTeamInput = document.getElementById('new-team-name');
+            const newTeamName = newTeamInput.value.trim();
+            
+            if (newTeamName && !teamData.includes(newTeamName)) {
+                teamData.push(newTeamName);
+                newTeamInput.value = '';
+                updateLeagueData({ teams: teamData });
+            } else if (teamData.includes(newTeamName)) {
+                alert("Tim ini sudah ada!");
+            }
+        }
+
+        function deleteTeam(teamName) {
+            if (!isAdmin) return;
+
+            // Di sini kita seharusnya menggunakan modal konfirmasi, namun karena pembatasan
+            if (confirm(`Apakah Anda yakin ingin menghapus tim "${teamName}"? Ini juga akan menghapus semua pertandingan yang melibatkan tim ini.`)) {
+                
+                // 1. Hapus tim dari teamData
+                teamData = teamData.filter(team => team !== teamName);
+
+                // 2. Hapus pertandingan yang melibatkan tim ini
+                const updatedMatches = {};
+                Object.keys(pertandinganData).forEach(babak => {
+                    updatedMatches[babak] = pertandinganData[babak].filter(match => {
+                        return match['Tim 1'] !== teamName && match['Tim 2'] !== teamName && match['Bye'] !== teamName;
+                    });
+                });
+                pertandinganData = updatedMatches;
+
+                // 3. Simpan perubahan
+                updateLeagueData({ teams: teamData, matches: pertandinganData });
+            }
+        }
+        
+        function renderTeamList() {
+            const list = document.getElementById('team-list');
+            const count = document.getElementById('team-count');
+            if (!list) return;
+
+            list.innerHTML = '';
+            count.textContent = teamData.length;
+
+            teamData.sort((a, b) => a.localeCompare(b)); // Urutkan A-Z
+            
+            teamData.forEach(team => {
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center p-2 bg-white border rounded-lg shadow-sm';
+                li.innerHTML = `
+                    <span class="font-medium text-gray-800 truncate">${team}</span>
+                    ${isAdmin ? `<button onclick="deleteTeam('${team}')" class="text-red-500 hover:text-red-700 text-sm p-1 ml-2 transition">Hapus</button>` : ''}
+                `;
+                list.appendChild(li);
+            });
+        }
+        
+        function resetLeagueData() {
+            if (!isAdmin) return;
+             if (confirm("ANDA YAKIN INGIN MENGHAPUS SEMUA DATA LIGA (TIM & SKOR)? Tindakan ini tidak dapat dibatalkan!")) {
+                 updateLeagueData({
+                     leagueName: "New Efootball League",
+                     teams: [],
+                     matches: {}
+                 });
+             }
+        }
+
+
+        // --- LOGIKA KLASIFIKASI & RENDERING ---
+        
+        function resetKlasemen() {
+            return teamData.map(tim => ({
+                Tim: tim,
+                M: 0, W: 0, D: 0, L: 0,
+                GF: 0, GA: 0, GD: 0,
+                Pts: 0
+            }));
+        }
+
+        function calculateKlasemen() {
+            klasemenData = resetKlasemen();
+            const klasemenMap = klasemenData.reduce((map, tim) => {
+                map[tim.Tim] = tim;
+                return map;
+            }, {});
+
+            const allMatches = Object.values(pertandinganData).flat();
+
+            allMatches.forEach(match => {
+                if (match['Tim 1'] && match['Tim 2'] && match['Skor 1'] !== '' && match['Skor 2'] !== '') {
+                    const tim1 = klasemenMap[match['Tim 1']];
+                    const tim2 = klasemenMap[match['Tim 2']];
+                    const skor1 = match['Skor 1'];
+                    const skor2 = match['Skor 2'];
+
+                    if (!tim1 || !tim2) return; 
+
+                    tim1.M += 1;
+                    tim1.GF += skor1;
+                    tim1.GA += skor2;
+
+                    tim2.M += 1;
+                    tim2.GF += skor2;
+                    tim2.GA += skor1;
+
+                    if (skor1 > skor2) {
+                        tim1.W += 1; tim1.Pts += 3; tim2.L += 1;
+                    } else if (skor2 > skor1) {
+                        tim2.W += 1; tim2.Pts += 3; tim1.L += 1;
+                    } else {
+                        tim1.D += 1; tim1.Pts += 1; tim2.D += 1; tim2.Pts += 1;
+                    }
+                }
+            });
+
+            klasemenData.forEach(tim => {
+                tim.GD = tim.GF - tim.GA;
+            });
+
+            renderKlasemen();
+        }
+
+        function renderKlasemen() {
+            // ... (Fungsi renderKlasemen sama seperti sebelumnya, hanya menggunakan data tim global) ...
+            const tbody = document.getElementById('klasemen-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            // Filter tim yang sudah dihapus dari data klasemen jika ada
+            klasemenData = klasemenData.filter(t => teamData.includes(t.Tim));
+            
+            sortKlasemen(klasemenData);
+            
+            klasemenData.forEach((tim, index) => {
+                const row = document.createElement('tr');
+                row.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+
+                let rankClass = '';
+                if (index < 4 && tim.M > 0) {
+                    rankClass = 'font-bold text-white bg-emerald-500 rounded-lg shadow-sm';
+                }
+
+                // Menggunakan kelas px-2 untuk sel data agar lebih rapat
+                row.innerHTML = `
+                    <td class="px-2 py-2 text-sm text-center">
+                        <span class="w-6 h-6 inline-flex items-center justify-center ${rankClass}">${index + 1}</span>
+                    </td>
+                    <td class="px-3 py-2 text-sm font-medium text-gray-900 truncate max-w-[80px]">${tim.Tim}</td>
+                    <!-- Kolom M disembunyikan di mobile, muncul di sm: ke atas -->
+                    <td class="hidden sm:table-cell px-2 py-2 text-sm text-center text-gray-500">${tim.M}</td>
+                    <td class="px-2 py-2 text-sm text-center text-gray-500">${tim.W}</td>
+                    <td class="px-2 py-2 text-sm text-center text-gray-500">${tim.D}</td>
+                    <td class="px-2 py-2 text-sm text-center text-gray-500">${tim.L}</td>
+                    <td class="px-2 py-2 text-sm text-center text-gray-500">${tim.GF}</td>
+                    <!-- Kolom GA disembunyikan di mobile, muncul di sm: ke atas -->
+                    <td class="hidden sm:table-cell px-2 py-2 text-sm text-center text-gray-500">${tim.GA}</td>
+                    <td class="px-2 py-2 text-sm text-center text-gray-500 font-semibold">${tim.GD > 0 ? '+' : ''}${tim.GD}</td>
+                    <td class="px-2 py-2 text-sm text-center font-bold text-emerald-600">${tim.Pts}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function sortKlasemen(data) {
+            const { column, direction } = currentSort;
+            
+            data.sort((a, b) => {
+                const aVal = a[column];
+                const bVal = b[column];
+
+                let comparison = 0;
+                if (aVal > bVal) comparison = 1;
+                else if (aVal < bVal) comparison = -1;
+
+                const primarySort = direction === 'asc' ? comparison : comparison * -1;
+                
+                if (primarySort !== 0) {
+                    return primarySort;
+                }
+
+                const gdA = a.GD; const gdB = b.GD;
+                if (gdB !== gdA) return gdB - gdA;
+
+                const gfA = a.GF; const gfB = b.GF;
+                if (gfB !== gfA) return gfB - gfA;
+
+                return a.Tim.localeCompare(b.Tim);
+            });
+        }
+
+        // --- LOGIKA PERTANDINGAN & GENERATE MATCHES ---
+
+        function generateMatchesModal() {
+            if (!isAdmin) return;
+            if (teamData.length < 2) {
+                 alert("Minimal harus ada 2 tim untuk membuat jadwal!");
+                 return;
+            }
+            document.getElementById('generate-modal').classList.remove('hidden');
+        }
+
+        function generateMatches() {
+            if (!isAdmin) return;
+            closeModal('generate-modal');
+
+            const teams = [...teamData]; // Salin tim
+            const numTeams = teams.length;
+            
+            if (numTeams < 2) return;
+
+            // Logika Round Robin (Home & Away)
+            const rounds = 2 * (numTeams - (numTeams % 2 === 0 ? 1 : 0));
+            
+            let matches = {};
+            let teamList = [...teams];
+            
+            // Tambahkan "BYE" jika jumlah tim ganjil
+            if (numTeams % 2 !== 0) {
+                teamList.push("BYE");
+            }
+
+            const numSlots = teamList.length;
+            const numRounds = numSlots - 1; 
+
+            // Algoritma Circle Method untuk Round Robin
+            for (let round = 1; round <= numRounds * 2; round++) {
+                matches[round] = [];
+                let matchCounter = 1;
+                
+                for (let i = 0; i < numSlots / 2; i++) {
+                    const team1Index = i;
+                    const team2Index = numSlots - 1 - i;
+                    
+                    let team1 = teamList[team1Index];
+                    let team2 = teamList[team2Index];
+                    
+                    // Putaran 1 (Round 1 sampai numRounds): Home/Away normal
+                    // Putaran 2 (Round numRounds + 1 sampai 2*numRounds): Dibalik (Home/Away terbalik)
+                    let homeTeam = team1;
+                    let awayTeam = team2;
+
+                    if (round > numRounds) {
+                        // Putaran kedua, tukar home/away
+                        const temp = homeTeam;
+                        homeTeam = awayTeam;
+                        awayTeam = temp;
+                    }
+                    
+                    // Jika salah satu tim adalah BYE
+                    if (homeTeam === "BYE" || awayTeam === "BYE") {
+                        const byeTeam = homeTeam === "BYE" ? awayTeam : homeTeam;
+                        matches[round].push({ Babak: round, Match: matchCounter++, 'Tim 1': '', 'Skor 1': '', 'Tim 2': '', 'Skor 2': '', 'Bye': byeTeam, id: `${round}-${matchCounter}` });
+                    } else {
+                        // Pertandingan normal
+                        matches[round].push({ Babak: round, Match: matchCounter++, 'Tim 1': homeTeam, 'Skor 1': '', 'Tim 2': awayTeam, 'Skor 2': '', 'Bye': '', id: `${round}-${matchCounter}` });
+                    }
+                }
+                
+                // Rotasi tim kecuali tim pertama (teamList[0])
+                const firstTeam = teamList[0];
+                const lastTeam = teamList.pop();
+                teamList.splice(1, 0, lastTeam); 
+            }
+            
+            pertandinganData = matches;
+            updateLeagueData({ matches: pertandinganData });
+            
+            activeRound = 1;
+            renderPertandingan();
+            alert("Jadwal Round Robin berhasil dibuat! Total babak: " + (numRounds * 2));
+        }
+
+        function renderPertandingan() {
+            const roundTabs = document.getElementById('round-tabs');
+            const roundSelect = document.getElementById('round-select');
+            const matchesContainer = document.getElementById('matches-container');
+            const generateBtn = document.getElementById('generate-matches-btn');
+            
+            roundTabs.innerHTML = '';
+            roundSelect.innerHTML = '';
+            matchesContainer.innerHTML = '';
+
+            // Tampilkan tombol generate hanya jika Admin aktif
+            generateBtn.style.display = isAdmin ? 'block' : 'none';
+
+            const rounds = Object.keys(pertandinganData).map(Number).sort((a, b) => a - b);
+            
+            if (rounds.length === 0) {
+                 matchesContainer.innerHTML = '<p class="text-gray-500 text-center">Tidak ada data pertandingan yang tersedia. Silakan <span class="font-semibold">Login Admin</span> dan gunakan tombol <span class="font-semibold">Generate Match</span>.</p>';
+                 return;
+            }
+
+            if (!rounds.includes(activeRound)) {
+                activeRound = rounds[0];
+            }
+
+            // Render Tabs dan Dropdown
+            rounds.forEach(round => {
+                const button = document.createElement('button');
+                button.className = `flex-1 py-2 px-1 text-center text-sm transition duration-150 rounded-t-lg mx-1 ${round === activeRound ? 'active text-emerald-600 font-semibold border-b-2 border-emerald-600' : 'text-gray-600 hover:bg-gray-50'}`;
+                button.innerHTML = `Babak ${round}`;
+                button.onclick = () => { setActiveRound(round); };
+                roundTabs.appendChild(button);
+
+                const option = document.createElement('option');
+                option.value = round;
+                option.textContent = `Babak ${round}`;
+                if (round === activeRound) {
+                    option.selected = true;
+                }
+                roundSelect.appendChild(option);
+            });
+
+            roundSelect.onchange = (e) => setActiveRound(parseInt(e.target.value, 10));
+
+            const currentMatches = pertandinganData[activeRound] || [];
+
+            // Render Match Cards
+            currentMatches.forEach((match) => {
+                const matchId = match.id; 
+
+                if (match['Tim 1'] && match['Tim 2']) {
+                    const isFinished = match['Skor 1'] !== '';
+                    const score1 = isFinished ? match['Skor 1'] : '';
+                    const score2 = isFinished ? match['Skor 2'] : '';
+                    
+                    const resultText = isFinished 
+                        ? `<span class="font-bold text-emerald-600">${score1}</span> - <span class="font-bold text-emerald-600">${score2}</span>`
+                        : `<span class="text-gray-500">vs</span>`;
+                    const statusText = isFinished ? 'Selesai' : 'Jadwal';
+                    const statusClass = isFinished ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
+                    
+                    let actionButton = '';
+                    if (isAdmin) {
+                        actionButton = isFinished 
+                            ? `<button onclick="openScoreModal('${matchId}')" class="text-xs text-gray-500 hover:text-emerald-600 transition">Ubah Skor</button>`
+                            : `<button onclick="openScoreModal('${matchId}')" class="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 px-3 py-1 rounded-lg transition shadow-sm">Input Skor</button>`;
+                    } else {
+                        actionButton = `<span class="text-xs text-gray-400">Login admin untuk input</span>`;
+                    }
+
+                    const matchCard = `
+                        <div class="p-4 bg-white rounded-xl shadow-md border-l-4 border-emerald-500 hover:shadow-lg transition">
+                            <div class="text-xs font-semibold text-gray-500 mb-2 flex justify-between items-center">
+                                Babak ${match.Babak} Match #${match.Match}
+                                <span class="px-2 py-0.5 text-xs font-medium ${statusClass} rounded-full">${statusText}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-lg md:text-xl mb-3">
+                                <span class="font-semibold text-gray-800 w-1/3 text-right truncate pr-2">${match['Tim 1']}</span>
+                                <span class="w-1/3 text-center mx-1">${resultText}</span>
+                                <span class="font-semibold text-gray-800 w-1/3 text-left truncate pl-2">${match['Tim 2']}</span>
+                            </div>
+                            <div class="flex justify-end">
+                                ${actionButton}
+                            </div>
+                        </div>
+                    `;
+                    matchesContainer.innerHTML += matchCard;
+                } else if (match.Bye) {
+                    const byeCard = `
+                        <div class="p-4 bg-gray-100 rounded-xl shadow-md border-l-4 border-gray-400">
+                            <div class="flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-9a1 1 0 000 2h2a1 1 0 100-2h-2z" clip-rule="evenodd" />
+                                </svg>
+                                <span class="text-md font-medium text-gray-700">
+                                    ${match.Bye} <span class="text-gray-500 font-normal">(BYE - Tidak bertanding)</span>
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    matchesContainer.innerHTML += byeCard;
+                }
+            });
+        }
+
+        function setActiveRound(round) {
+            activeRound = round;
+            // Update tabs dan dropdown
+            const tabs = document.querySelectorAll('#round-tabs button');
+            tabs.forEach(btn => {
+                const isSelected = parseInt(btn.textContent.split(' ')[1], 10) === round;
+                btn.classList.toggle('active', isSelected);
+                btn.classList.toggle('text-emerald-600', isSelected);
+                btn.classList.toggle('font-semibold', isSelected);
+                btn.classList.toggle('border-b-2', isSelected);
+                btn.classList.toggle('border-emerald-600', isSelected);
+                btn.classList.toggle('text-gray-600', !isSelected);
+            });
+            const roundSelect = document.getElementById('round-select');
+            if (roundSelect) roundSelect.value = round;
+
+            renderPertandingan();
+        }
+
+        function showTab(contentId) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            document.getElementById(contentId).classList.remove('hidden');
+
+            document.getElementById(`tab-${contentId.replace('-content', '')}`).classList.add('active');
+
+            if (contentId === 'klasemen-content') {
+                 calculateKlasemen();
+            }
+            if (contentId === 'home-content') {
+                 updateHomeTabVisibility();
+                 renderTeamList();
+            }
+        }
+        
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            if (id === 'score-modal') activeMatch = null;
+        }
+
+
+        // Logika Save Score (Diperbarui untuk Firestore)
+        function saveScore() {
+            if (!activeMatch || !isAdmin) {
+                console.error("Tidak ada pertandingan aktif atau bukan admin.");
+                closeModal('score-modal');
+                return;
+            }
+
+            const score1 = parseInt(document.getElementById('score1-input').value, 10);
+            const score2 = parseInt(document.getElementById('score2-input').value, 10);
+
+            if (isNaN(score1) || isNaN(score2) || score1 < 0 || score2 < 0) {
+                 alert("Input skor tidak valid. Pastikan skor adalah angka positif.");
+                 return;
+            }
+            
+            // Temukan index array dari pertandingan yang aktif
+            const matchIndex = pertandinganData[activeMatch.Babak].findIndex(m => m.id === activeMatch.id);
+
+            if (matchIndex === -1) {
+                console.error("Pertandingan tidak ditemukan.");
+                closeModal('score-modal');
+                return;
+            }
+
+            // Update data di array lokal
+            pertandinganData[activeMatch.Babak][matchIndex]['Skor 1'] = score1;
+            pertandinganData[activeMatch.Babak][matchIndex]['Skor 2'] = score2;
+            
+            closeModal('score-modal');
+
+            // SIMPAN DATA KE FIRESTORE
+            updateLeagueData({ matches: pertandinganData });
+        }
+
+        // --- Inisialisasi Aplikasi ---
+        window.onload = function() {
+            initializeFirebase();
+            
+            document.querySelectorAll('.header-cell').forEach(header => {
+                header.addEventListener('click', handleSort);
+            });
+            
+            // Atur tab Klasemen sebagai default aktif saat pertama kali dimuat
+            showTab('klasemen-content'); 
+        };
+    </script>
+</body>
+</html>
+
+
