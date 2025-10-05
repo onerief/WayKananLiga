@@ -25,9 +25,28 @@
         .header-gradient {
             background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(168, 85, 247, 0.1));
         }
+        /* Loader styles */
+        #loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #8b5cf6;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex flex-col items-center justify-center z-50">
+        <div id="loader"></div>
+        <p class="text-white mt-4">Memuat data...</p>
+    </div>
 
     <!-- Admin Login Modal -->
     <div id="login-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-70 modal-backdrop flex items-center justify-center z-50">
@@ -122,7 +141,7 @@
     </div>
 
     <!-- Main Content -->
-    <div id="main-content">
+    <div id="main-content" class="invisible">
         <div class="container mx-auto p-4 md:p-8">
             <header class="relative text-center mb-10 bg-white rounded-xl p-6 shadow-lg border border-gray-200">
                 <div class="flex items-center justify-center">
@@ -186,38 +205,36 @@
         </div>
     </div>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- DATA INITIALIZATION ---
-        const DB_KEY = 'efootballLeagueData_v2';
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
 
+        // --- FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCfikX-HQuKhtSksHzyJwuBF-dUr0ckGRE",
+            authDomain: "wayliga.firebaseapp.com",
+            projectId: "wayliga",
+            storageBucket: "wayliga.appspot.com",
+            messagingSenderId: "178418335963",
+            appId: "1:178418335963:web:a9ff5dadc64fa9cdcf8cfe",
+            measurementId: "G-5QDKCZDL8X"
+        };
+
+        // Firebase instances
+        let app, db, auth, userId;
+
+        // --- DATA INITIALIZATION ---
         function getInitialData() {
-            return {
+             return {
                 leagues: [{
                     id: crypto.randomUUID(),
-                    name: 'Liga Efootball Musim 1',
+                    name: 'Liga EFootball Way Kanan',
                     teams: ["Arief HD", "Dexulmantap", "Bayu", "Ptangpteng", "Tuku Pulsa Tsel", "Gusmurtad", "The Familia FC", "Riders", "Ipangopen"],
                     matches: [
-                        // --- Putaran 1 ---
                         { pekan: 1, matchId: 1, homeTeam: "Arief HD", homeScore: 3, awayScore: 2, awayTeam: "Dexulmantap", status: "Finished" },{ pekan: 1, matchId: 2, homeTeam: "Bayu", homeScore: 2, awayScore: 3, awayTeam: "Ptangpteng", status: "Finished" },{ pekan: 1, matchId: 3, homeTeam: "Tuku Pulsa Tsel", homeScore: 3, awayScore: 4, awayTeam: "Gusmurtad", status: "Finished" },{ pekan: 1, matchId: 4, homeTeam: "The Familia FC", homeScore: 0, awayScore: 3, awayTeam: "Riders", status: "Finished" }, { pekan: 1, matchId: 101, homeTeam: "Ipangopen", awayTeam: "Libur", status: "Scheduled" },
                         { pekan: 2, matchId: 5, homeTeam: "Ipangopen", homeScore: 8, awayScore: 2, awayTeam: "Riders", status: "Finished" },{ pekan: 2, matchId: 6, homeTeam: "Arief HD", homeScore: 3, awayScore: 3, awayTeam: "Gusmurtad", status: "Finished" },{ pekan: 2, matchId: 7, homeTeam: "Ptangpteng", homeScore: 2, awayScore: 1, awayTeam: "Tuku Pulsa Tsel", status: "Finished" },{ pekan: 2, matchId: 8, homeTeam: "Dexulmantap", homeScore: 3, awayScore: 6, awayTeam: "The Familia FC", status: "Finished" }, { pekan: 2, matchId: 102, homeTeam: "Bayu", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 3, matchId: 9, homeTeam: "Ipangopen", homeScore: 0, awayScore: 3, awayTeam: "Arief HD", status: "Finished" },{ pekan: 3, matchId: 10, homeTeam: "Bayu", homeScore: 1, awayScore: 4, awayTeam: "Gusmurtad", status: "Finished" },{ pekan: 3, matchId: 11, homeTeam: "Ptangpteng", homeScore: 3, awayScore: 3, awayTeam: "Riders", status: "Finished" },{ pekan: 3, matchId: 12, homeTeam: "Tuku Pulsa Tsel", homeScore: 2, awayScore: 3, awayTeam: "The Familia FC", status: "Finished" }, { pekan: 3, matchId: 103, homeTeam: "Dexulmantap", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 4, matchId: 13, homeTeam: "Ipangopen", homeScore: 1, awayScore: 0, awayTeam: "Bayu", status: "Finished" },{ pekan: 4, matchId: 14, homeTeam: "Arief HD", homeScore: 1, awayScore: 6, awayTeam: "Ptangpteng", status: "Finished" },{ pekan: 4, matchId: 15, homeTeam: "Gusmurtad", homeScore: 1, awayScore: 3, awayTeam: "The Familia FC", status: "Finished" },{ pekan: 4, matchId: 16, homeTeam: "Dexulmantap", homeScore: 0, awayScore: 3, awayTeam: "Riders", status: "Finished" }, { pekan: 4, matchId: 104, homeTeam: "Tuku Pulsa Tsel", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 5, matchId: 17, homeTeam: "Ipangopen", homeScore: 0, awayScore: 3, awayTeam: "Ptangpteng", status: "Finished" },{ pekan: 5, matchId: 18, homeTeam: "Bayu", homeScore: 1, awayScore: 3, awayTeam: "The Familia FC", status: "Finished" },{ pekan: 5, matchId: 19, homeTeam: "Arief HD", homeScore: 2, awayScore: 3, awayTeam: "Tuku Pulsa Tsel", status: "Finished" },{ pekan: 5, matchId: 20, homeTeam: "Gusmurtad", homeScore: 3, awayScore: 0, awayTeam: "Dexulmantap", status: "Finished" }, { pekan: 5, matchId: 105, homeTeam: "Riders", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 6, matchId: 21, homeTeam: "Ipangopen", homeScore: null, awayScore: null, awayTeam: "Tuku Pulsa Tsel", status: "Scheduled" },{ pekan: 6, matchId: 22, homeTeam: "Bayu", homeScore: 3, awayScore: 1, awayTeam: "Dexulmantap", status: "Finished" },{ pekan: 6, matchId: 23, homeTeam: "Ptangpteng", homeScore: 6, awayScore: 3, awayTeam: "Gusmurtad", status: "Finished" },{ pekan: 6, matchId: 24, homeTeam: "Riders", homeScore: 3, awayScore: 1, awayTeam: "Arief HD", status: "Finished" }, { pekan: 6, matchId: 106, homeTeam: "The Familia FC", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 7, matchId: 25, homeTeam: "Ipangopen", homeScore: null, awayScore: null, awayTeam: "Gusmurtad", status: "Scheduled" },{ pekan: 7, matchId: 26, homeTeam: "Bayu", homeScore: null, awayScore: null, awayTeam: "Tuku Pulsa Tsel", status: "Scheduled" },{ pekan: 7, matchId: 27, homeTeam: "Ptangpteng", homeScore: null, awayScore: null, awayTeam: "The Familia FC", status: "Scheduled" },{ pekan: 7, matchId: 28, homeTeam: "Riders", homeScore: null, awayScore: null, awayTeam: "Dexulmantap", status: "Scheduled" }, { pekan: 7, matchId: 107, homeTeam: "Arief HD", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 8, matchId: 29, homeTeam: "Ipangopen", homeScore: null, awayScore: null, awayTeam: "The Familia FC", status: "Scheduled" },{ pekan: 8, matchId: 30, homeTeam: "Bayu", homeScore: null, awayScore: null, awayTeam: "Arief HD", status: "Scheduled" },{ pekan: 8, matchId: 31, homeTeam: "Ptangpteng", homeScore: null, awayScore: null, awayTeam: "Dexulmantap", status: "Scheduled" },{ pekan: 8, matchId: 32, homeTeam: "Tuku Pulsa Tsel", homeScore: null, awayScore: null, awayTeam: "Riders", status: "Scheduled" }, { pekan: 8, matchId: 108, homeTeam: "Gusmurtad", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 9, matchId: 33, homeTeam: "Ipangopen", homeScore: null, awayScore: null, awayTeam: "Dexulmantap", status: "Scheduled" },{ pekan: 9, matchId: 34, homeTeam: "Bayu", homeScore: null, awayScore: null, awayTeam: "Riders", status: "Scheduled" },{ pekan: 9, matchId: 35, homeTeam: "Ptangpteng", homeScore: null, awayScore: null, awayTeam: "Arief HD", status: "Scheduled" },{ pekan: 9, matchId: 36, homeTeam: "Tuku Pulsa Tsel", homeScore: null, awayScore: null, awayTeam: "Gusmurtad", status: "Scheduled" }, { pekan: 9, matchId: 109, homeTeam: "Ptangpteng", awayTeam: "Libur", status: "Scheduled" },
-                        // --- Putaran 2 (Jadwal Dibalik) ---
-                        { pekan: 10, matchId: 37, homeTeam: "Dexulmantap", homeScore: null, awayScore: null, awayTeam: "Arief HD", status: "Scheduled" },{ pekan: 10, matchId: 38, homeTeam: "Ptangpteng", homeScore: null, awayScore: null, awayTeam: "Bayu", status: "Scheduled" },{ pekan: 10, matchId: 39, homeTeam: "Gusmurtad", homeScore: null, awayScore: null, awayTeam: "Tuku Pulsa Tsel", status: "Scheduled" },{ pekan: 10, matchId: 40, homeTeam: "Riders", homeScore: null, awayScore: null, awayTeam: "The Familia FC", status: "Scheduled" }, { pekan: 10, matchId: 110, homeTeam: "Ipangopen", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 11, matchId: 41, homeTeam: "Riders", homeScore: null, awayScore: null, awayTeam: "Ipangopen", status: "Scheduled" },{ pekan: 11, matchId: 42, homeTeam: "Gusmurtad", homeScore: null, awayScore: null, awayTeam: "Arief HD", status: "Scheduled" },{ pekan: 11, matchId: 43, homeTeam: "Tuku Pulsa Tsel", homeScore: null, awayScore: null, awayTeam: "Ptangpteng", status: "Scheduled" },{ pekan: 11, matchId: 44, homeTeam: "The Familia FC", homeScore: null, awayScore: null, awayTeam: "Dexulmantap", status: "Scheduled" }, { pekan: 11, matchId: 111, homeTeam: "Bayu", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 12, matchId: 45, homeTeam: "Arief HD", homeScore: null, awayScore: null, awayTeam: "Ipangopen", status: "Scheduled" },{ pekan: 12, matchId: 46, homeTeam: "Gusmurtad", homeScore: null, awayScore: null, awayTeam: "Bayu", status: "Scheduled" },{ pekan: 12, matchId: 47, homeTeam: "Riders", homeScore: null, awayScore: null, awayTeam: "Ptangpteng", status: "Scheduled" },{ pekan: 12, matchId: 48, homeTeam: "The Familia FC", homeScore: null, awayScore: null, awayTeam: "Tuku Pulsa Tsel", status: "Scheduled" }, { pekan: 12, matchId: 112, homeTeam: "Dexulmantap", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 13, matchId: 49, homeTeam: "Bayu", homeScore: null, awayScore: null, awayTeam: "Ipangopen", status: "Scheduled" },{ pekan: 13, matchId: 50, homeTeam: "Ptangpteng", homeScore: null, awayScore: null, awayTeam: "Arief HD", status: "Scheduled" },{ pekan: 13, matchId: 51, homeTeam: "The Familia FC", homeScore: null, awayScore: null, awayTeam: "Gusmurtad", status: "Scheduled" },{ pekan: 13, matchId: 52, homeTeam: "Riders", homeScore: null, awayScore: null, awayTeam: "Dexulmantap", status: "Scheduled" }, { pekan: 13, matchId: 113, homeTeam: "Tuku Pulsa Tsel", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 14, matchId: 53, homeTeam: "Ptangpteng", homeScore: null, awayScore: null, awayTeam: "Ipangopen", status: "Scheduled" },{ pekan: 14, matchId: 54, homeTeam: "The Familia FC", homeScore: null, awayScore: null, awayTeam: "Bayu", status: "Scheduled" },{ pekan: 14, matchId: 55, homeTeam: "Tuku Pulsa Tsel", homeScore: null, awayScore: null, awayTeam: "Arief HD", status: "Scheduled" },{ pekan: 14, matchId: 56, homeTeam: "Dexulmantap", homeScore: null, awayScore: null, awayTeam: "Gusmurtad", status: "Scheduled" }, { pekan: 14, matchId: 114, homeTeam: "Riders", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 15, matchId: 57, homeTeam: "Tuku Pulsa Tsel", homeScore: null, awayScore: null, awayTeam: "Ipangopen", status: "Scheduled" },{ pekan: 15, matchId: 58, homeTeam: "Dexulmantap", homeScore: null, awayScore: null, awayTeam: "Bayu", status: "Scheduled" },{ pekan: 15, matchId: 59, homeTeam: "Gusmurtad", homeScore: null, awayScore: null, awayTeam: "Ptangpteng", status: "Scheduled" },{ pekan: 15, matchId: 60, homeTeam: "Arief HD", homeScore: null, awayScore: null, awayTeam: "Riders", status: "Scheduled" }, { pekan: 15, matchId: 115, homeTeam: "The Familia FC", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 16, matchId: 61, homeTeam: "Gusmurtad", homeScore: null, awayScore: null, awayTeam: "Ipangopen", status: "Scheduled" },{ pekan: 16, matchId: 62, homeTeam: "Tuku Pulsa Tsel", homeScore: null, awayScore: null, awayTeam: "Bayu", status: "Scheduled" },{ pekan: 16, matchId: 63, homeTeam: "The Familia FC", homeScore: null, awayScore: null, awayTeam: "Ptangpteng", status: "Scheduled" },{ pekan: 16, matchId: 64, homeTeam: "Dexulmantap", homeScore: null, awayScore: null, awayTeam: "Riders", status: "Scheduled" }, { pekan: 16, matchId: 116, homeTeam: "Arief HD", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 17, matchId: 65, homeTeam: "The Familia FC", homeScore: null, awayScore: null, awayTeam: "Ipangopen", status: "Scheduled" },{ pekan: 17, matchId: 66, homeTeam: "Arief HD", homeScore: null, awayScore: null, awayTeam: "Bayu", status: "Scheduled" },{ pekan: 17, matchId: 67, homeTeam: "Dexulmantap", homeScore: null, awayScore: null, awayTeam: "Ptangpteng", status: "Scheduled" },{ pekan: 17, matchId: 68, homeTeam: "Riders", homeScore: null, awayScore: null, awayTeam: "Tuku Pulsa Tsel", status: "Scheduled" }, { pekan: 17, matchId: 117, homeTeam: "Gusmurtad", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 18, matchId: 69, homeTeam: "Dexulmantap", homeScore: null, awayScore: null, awayTeam: "Ipangopen", status: "Scheduled" },{ pekan: 18, matchId: 70, homeTeam: "Riders", homeScore: null, awayScore: null, awayTeam: "Bayu", status: "Scheduled" },{ pekan: 18, matchId: 71, homeTeam: "Arief HD", homeScore: null, awayScore: null, awayTeam: "Ptangpteng", status: "Scheduled" },{ pekan: 18, matchId: 72, homeTeam: "Gusmurtad", homeScore: null, awayScore: null, awayTeam: "Tuku Pulsa Tsel", status: "Scheduled" }, { pekan: 18, matchId: 118, homeTeam: "Ptangpteng", awayTeam: "Libur", status: "Scheduled" },
                     ]
                 }],
                 activeLeagueId: null
@@ -228,6 +245,8 @@
         let isAdmin = false;
 
         // --- DOM ELEMENTS ---
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const mainContent = document.getElementById('main-content');
         const loginModal = document.getElementById('login-modal');
         const loginForm = document.getElementById('login-form');
         const loginError = document.getElementById('login-error');
@@ -252,24 +271,49 @@
         const allTabContents = document.querySelectorAll('.tab-main-content');
 
         // --- DATA FUNCTIONS ---
-        function loadData() {
-            const data = localStorage.getItem(DB_KEY);
-            if (data) {
-                appData = JSON.parse(data);
-            } else {
-                appData = getInitialData();
+        async function loadData() {
+            if (!userId) return;
+            loadingOverlay.classList.remove('hidden');
+            
+            const docRef = doc(db, "league_data", userId);
+            try {
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    appData = docSnap.data();
+                } else {
+                    console.log("No such document! Creating initial data.");
+                    appData = getInitialData();
+                    if (appData.leagues.length > 0) {
+                        appData.activeLeagueId = appData.leagues[0].id;
+                    }
+                    await saveData(); // Save the initial data to Firestore
+                }
+                if (!appData.activeLeagueId && appData.leagues.length > 0) {
+                    appData.activeLeagueId = appData.leagues[0].id;
+                }
+            } catch (error) {
+                console.error("Error loading data:", error);
+                alert("Gagal memuat data dari server.");
+                appData = getInitialData(); // Fallback to local initial data
+            } finally {
+                renderAll();
+                loadingOverlay.classList.add('hidden');
+                mainContent.classList.remove('invisible');
             }
-            if (!appData.activeLeagueId && appData.leagues.length > 0) {
-                appData.activeLeagueId = appData.leagues[0].id;
-            }
-            saveData();
         }
 
-        function saveData() {
-            localStorage.setItem(DB_KEY, JSON.stringify(appData));
+        async function saveData() {
+            if (!userId) return;
+            try {
+                await setDoc(doc(db, "league_data", userId), appData);
+            } catch (error) {
+                console.error("Error saving data:", error);
+                alert("Gagal menyimpan data ke server.");
+            }
         }
 
         function getActiveLeague() {
+            if (!appData.leagues || appData.leagues.length === 0) return null;
             return appData.leagues.find(l => l.id === appData.activeLeagueId);
         }
 
@@ -314,7 +358,7 @@
                 teamStats[teamName] = { name: teamName, P: 0, M: 0, S: 0, K: 0, GM: 0, GK: 0, SG: 0, Poin: 0 };
             });
 
-            league.matches.filter(m => m.status === 'Finished').forEach(match => {
+            (league.matches || []).filter(m => m.status === 'Finished').forEach(match => {
                 if (!teamStats[match.homeTeam] || !teamStats[match.awayTeam]) return;
                 const home = teamStats[match.homeTeam];
                 const away = teamStats[match.awayTeam];
@@ -345,7 +389,7 @@
                 
                 row.innerHTML = `
                     <td class="px-1 py-1.5 font-medium text-gray-900">${index + 1}</td>
-                    <td class="px-2 py-1.5 font-semibold text-gray-900">${team.name}</td>
+                    <td class="px-2 py-1.5 font-semibold text-gray-900 bg-gray-50">${team.name}</td>
                     <td class="px-1 py-1.5 text-center">${team.P}</td>
                     <td class="px-1 py-1.5 text-center text-green-600">${team.M}</td>
                     <td class="px-1 py-1.5 text-center text-yellow-600">${team.S}</td>
@@ -361,7 +405,7 @@
 
         function renderFixtures(league) {
             fixturesList.innerHTML = '';
-            const matchesByWeek = league.matches.reduce((acc, match) => {
+            const matchesByWeek = (league.matches || []).reduce((acc, match) => {
                 (acc[match.pekan] = acc[match.pekan] || []).push(match);
                 return acc;
             }, {});
@@ -382,449 +426,186 @@
 
                 const tbody = document.createElement('tbody');
                 matchesByWeek[pekan].forEach((match, index) => {
-                    // Handle Libur weeks
                     if (match.homeTeam === 'Libur' || match.awayTeam === 'Libur') {
                         const byeTeam = match.homeTeam === 'Libur' ? match.awayTeam : match.homeTeam;
                         const rowColor = (index % 2 === 0) ? 'bg-gray-50' : 'bg-white';
-                        const byeRow = document.createElement('tr');
-                        byeRow.className = rowColor;
-                        byeRow.innerHTML = `
-                             <td colspan="3" class="w-full text-center p-2 rounded-md truncate text-gray-500 italic">
-                                ${byeTeam} (Libur)
-                            </td>
-                        `;
-                        tbody.appendChild(byeRow);
-                        return; // Skip to the next match
+                        tbody.innerHTML += `<tr class="${rowColor}"><td colspan="3" class="w-full text-center py-1 px-2 rounded-md truncate text-gray-500 italic">${byeTeam} (Libur)</td></tr>`;
+                        return;
                     }
-
                     const isScheduled = match.status === 'Scheduled';
-                    const scoreDisplay = isScheduled ? `<span class="text-xs text-gray-500">VS</span>` : `<span class="font-bold text-base text-gray-800">${match.homeScore}&nbsp;-&nbsp;${match.awayScore}</span>`;
-                    
-                    let homeColorClass = 'font-medium';
-                    let awayColorClass = 'font-medium';
-
+                    let scoreDisplay;
+                    let homeColorClass = 'font-medium', awayColorClass = 'font-medium';
                     if (!isScheduled) {
                         if (match.homeScore > match.awayScore) {
-                            homeColorClass = 'font-bold text-green-600';
-                            awayColorClass = 'text-red-600';
+                            homeColorClass = 'font-bold text-green-600'; awayColorClass = 'text-red-600';
+                            scoreDisplay = `<span class="font-bold text-base text-green-600">${match.homeScore}</span><span class="text-gray-800">&nbsp;-&nbsp;</span><span class="font-bold text-base text-red-600">${match.awayScore}</span>`;
                         } else if (match.homeScore < match.awayScore) {
-                            homeColorClass = 'text-red-600';
-                            awayColorClass = 'font-bold text-green-600';
+                            homeColorClass = 'text-red-600'; awayColorClass = 'font-bold text-green-600';
+                            scoreDisplay = `<span class="font-bold text-base text-red-600">${match.homeScore}</span><span class="text-gray-800">&nbsp;-&nbsp;</span><span class="font-bold text-base text-green-600">${match.awayScore}</span>`;
                         } else {
-                            homeColorClass = 'text-yellow-600';
-                            awayColorClass = 'text-yellow-600';
+                            homeColorClass = 'text-yellow-600'; awayColorClass = 'text-yellow-600';
+                            scoreDisplay = `<span class="font-bold text-base text-yellow-600">${match.homeScore}&nbsp;-&nbsp;${match.awayScore}</span>`;
                         }
-                    }
+                    } else { scoreDisplay = `<span class="text-xs text-gray-500">VS</span>`; }
                     
                     const rowColor = (index % 2 === 0) ? 'bg-gray-50' : 'bg-white';
-
-                    const matchRow = document.createElement('tr');
-                    matchRow.className = rowColor;
-
-                    matchRow.innerHTML = `
-                        <td class="w-2/5 text-right p-2 rounded-l-md truncate pr-3 ${homeColorClass}">${match.homeTeam}</td>
-                        <td class="w-1/5 text-center font-bold text-lg p-2">${scoreDisplay}</td>
-                        <td class="w-2/5 text-left p-2 rounded-r-md truncate pl-3 ${awayColorClass}">${match.awayTeam}</td>
-                    `;
-                    tbody.appendChild(matchRow);
-
+                    const matchRow = `<tr class="${rowColor}"><td class="w-2/5 text-right py-1 px-2 rounded-l-md truncate pr-3 ${homeColorClass}">${match.homeTeam}</td><td class="w-1/5 text-center py-1 px-2">${scoreDisplay}</td><td class="w-2/5 text-left py-1 px-2 rounded-r-md truncate pl-3 ${awayColorClass}">${match.awayTeam}</td></tr>`;
+                    tbody.innerHTML += matchRow;
                     if (isAdmin && isScheduled) {
-                        const adminRow = document.createElement('tr');
-                        adminRow.className = rowColor;
-                        adminRow.innerHTML = `
-                            <td colspan="3" class="pb-2 pt-1 px-2 text-center">
-                                <div class="flex items-center justify-center gap-2">
-                                    <input type="number" min="0" id="homeScore-${match.matchId}" class="w-16 bg-gray-200 text-gray-800 text-center rounded border border-gray-300" placeholder="home">
-                                    <span>-</span>
-                                    <input type="number" min="0" id="awayScore-${match.matchId}" class="w-16 bg-gray-200 text-gray-800 text-center rounded border border-gray-300" placeholder="away">
-                                    <button onclick="updateScore(${match.matchId})" class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-2 rounded-md font-semibold">Update</button>
-                                </div>
-                            </td>
-                        `;
-                        tbody.appendChild(adminRow);
+                        tbody.innerHTML += `<tr class="${rowColor}"><td colspan="3" class="pb-2 pt-1 px-2 text-center"><div class="flex items-center justify-center gap-2"><input type="number" min="0" id="homeScore-${match.matchId}" class="w-16 bg-gray-200 text-gray-800 text-center rounded border border-gray-300" placeholder="home"><span>-</span><input type="number" min="0" id="awayScore-${match.matchId}" class="w-16 bg-gray-200 text-gray-800 text-center rounded border border-gray-300" placeholder="away"><button onclick="updateScore(${match.matchId})" class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-2 rounded-md font-semibold">Update</button></div></td></tr>`;
                     }
                 });
-
                 table.appendChild(tbody);
                 weekContainer.appendChild(table);
                 fixturesList.appendChild(weekContainer);
             });
         }
         
-        // --- AUTH & UI TOGGLE ---
         function setAdminMode(enabled) {
             isAdmin = enabled;
-            if (enabled) {
-                showLoginBtn.classList.add('hidden');
-                exitAdminBtn.classList.remove('hidden');
-                manageDataBtn.classList.remove('hidden');
-                adminViewHeader.classList.remove('hidden');
-            } else {
-                showLoginBtn.classList.remove('hidden');
-                exitAdminBtn.classList.add('hidden');
-                manageDataBtn.classList.add('hidden');
-                adminViewHeader.classList.add('hidden');
-                managementModal.classList.add('hidden');
-            }
+            showLoginBtn.classList.toggle('hidden', enabled);
+            exitAdminBtn.classList.toggle('hidden', !enabled);
+            manageDataBtn.classList.toggle('hidden', !enabled);
+            adminViewHeader.classList.toggle('hidden', !enabled);
+            if (!enabled) managementModal.classList.add('hidden');
             renderAll();
         }
 
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             if (document.getElementById('password').value === 'adminganteng') {
-                loginModal.classList.add('hidden');
-                loginForm.reset();
-                setAdminMode(true);
-            } else {
-                loginError.classList.remove('hidden');
-            }
+                loginModal.classList.add('hidden'); loginForm.reset(); setAdminMode(true);
+            } else { loginError.classList.remove('hidden'); }
         });
         
         exitAdminBtn.addEventListener('click', () => setAdminMode(false));
         showLoginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
         closeLoginBtn.addEventListener('click', () => loginModal.classList.add('hidden'));
-        leagueSelector.addEventListener('change', (e) => {
-            appData.activeLeagueId = e.target.value;
-            saveData();
-            renderAll();
+        leagueSelector.addEventListener('change', async (e) => {
+            appData.activeLeagueId = e.target.value; await saveData(); renderAll();
         });
 
-        // --- MAIN TAB LOGIC ---
         function switchMainTab(targetTab) {
-            allTabContents.forEach(content => {
-                if(content.id === `tab-content-${targetTab}`) {
-                    content.classList.remove('hidden');
-                } else {
-                    content.classList.add('hidden');
-                }
-            });
-             allTabBtns.forEach(btn => {
-                if (btn.id === `tab-btn-${targetTab}`) {
-                    btn.classList.add('border-purple-500', 'text-purple-600');
-                    btn.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-800', 'hover:border-gray-400');
-                } else {
-                    btn.classList.remove('border-purple-500', 'text-purple-600');
-                    btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-800', 'hover:border-gray-400');
-                }
+            allTabContents.forEach(c => c.classList.toggle('hidden', c.id !== `tab-content-${targetTab}`));
+            allTabBtns.forEach(b => {
+                const isActive = b.id === `tab-btn-${targetTab}`;
+                b.classList.toggle('border-purple-500', isActive); b.classList.toggle('text-purple-600', isActive);
+                b.classList.toggle('border-transparent', !isActive); b.classList.toggle('text-gray-500', !isActive);
             });
         }
         tabBtnKlasemen.addEventListener('click', () => switchMainTab('klasemen'));
         tabBtnJadwal.addEventListener('click', () => switchMainTab('jadwal'));
 
-
-        // --- MANAGEMENT MODAL ---
-        const mgmtLeaguesList = document.getElementById('leagues-list');
-        const mgmtTeamsList = document.getElementById('teams-list');
-        const mgmtMatchesList = document.getElementById('matches-list');
-        
-        // League Editor Modal elements
-        const leagueEditorModal = document.getElementById('league-editor-modal');
-        const leagueEditorTitle = document.getElementById('league-editor-title');
-        const leagueEditorName = document.getElementById('league-editor-name');
-        const existingTeamsChecklist = document.getElementById('existing-teams-checklist');
-        const newTeamsTextarea = document.getElementById('new-teams-textarea');
-        const saveLeagueBtn = document.getElementById('save-league-btn');
-        const cancelLeagueBtn = document.getElementById('cancel-league-btn');
-        
+        const mgmtLeaguesList = document.getElementById('leagues-list'), mgmtTeamsList = document.getElementById('teams-list'), mgmtMatchesList = document.getElementById('matches-list');
+        const leagueEditorModal = document.getElementById('league-editor-modal'), leagueEditorTitle = document.getElementById('league-editor-title'), leagueEditorName = document.getElementById('league-editor-name');
+        const existingTeamsChecklist = document.getElementById('existing-teams-checklist'), newTeamsTextarea = document.getElementById('new-teams-textarea'), saveLeagueBtn = document.getElementById('save-league-btn'), cancelLeagueBtn = document.getElementById('cancel-league-btn');
         let editingLeagueId = null;
 
-        manageDataBtn.addEventListener('click', () => {
-            renderManagementModal();
-            managementModal.classList.remove('hidden');
-        });
+        manageDataBtn.addEventListener('click', () => { renderManagementModal(); managementModal.classList.remove('hidden'); });
         closeManagementBtn.addEventListener('click', () => managementModal.classList.add('hidden'));
 
         function renderManagementModal() {
-            // Render leagues
             mgmtLeaguesList.innerHTML = '';
             appData.leagues.forEach(league => {
                 const activeClass = league.id === appData.activeLeagueId ? 'bg-purple-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800';
                 mgmtLeaguesList.innerHTML += `<div class="${activeClass} p-2 rounded-md flex justify-between items-center"><span class="font-semibold cursor-pointer" onclick="setActiveLeague('${league.id}')">${league.name}</span><div><button onclick="editLeague('${league.id}')" class="text-yellow-500 px-1">✏️</button><button onclick="deleteLeague('${league.id}')" class="text-red-500 px-1">🗑️</button></div></div>`;
             });
-            
             const activeLeague = getActiveLeague();
-            // Render teams
             mgmtTeamsList.innerHTML = '';
             if(activeLeague && activeLeague.teams) {
-                activeLeague.teams.forEach(team => {
-                    mgmtTeamsList.innerHTML += `<div class="bg-gray-200 p-2 rounded-md flex justify-between items-center"><span>${team}</span><div><button onclick="editTeam('${team}')" class="text-yellow-500 px-1">✏️</button><button onclick="deleteTeam('${team}')" class="text-red-500 px-1">🗑️</button></div></div>`;
-                });
+                activeLeague.teams.forEach(team => { mgmtTeamsList.innerHTML += `<div class="bg-gray-200 p-2 rounded-md flex justify-between items-center"><span>${team}</span><div><button onclick="editTeam('${team}')" class="text-yellow-500 px-1">✏️</button><button onclick="deleteTeam('${team}')" class="text-red-500 px-1">🗑️</button></div></div>`; });
             }
-
-            // Render matches
             mgmtMatchesList.innerHTML = '';
-             if(activeLeague && activeLeague.matches) {
-                const matchesByWeek = activeLeague.matches.reduce((acc, match) => {
-                    (acc[match.pekan] = acc[match.pekan] || []).push(match);
-                    return acc;
-                }, {});
-
-                Object.keys(matchesByWeek).sort((a,b) => a-b).forEach(pekan => {
-                     let weekHtml = `<h4 class="font-bold mt-2 text-gray-500">Pekan ${pekan}</h4>`;
-                     matchesByWeek[pekan].forEach(match => {
-                        weekHtml += `<div class="bg-gray-200 p-2 rounded-md flex justify-between items-center text-sm"><span>${match.homeTeam} vs ${match.awayTeam}</span><div><button onclick="editMatch(${match.matchId})" class="text-yellow-500 px-1">✏️</button><button onclick="deleteMatch(${match.matchId})" class="text-red-500 px-1">🗑️</button></div></div>`;
-                     });
-                     mgmtMatchesList.innerHTML += weekHtml;
-                });
+            if(activeLeague && activeLeague.matches) {
+                const matchesByWeek = activeLeague.matches.reduce((acc, m) => { (acc[m.pekan] = acc[m.pekan] || []).push(m); return acc; }, {});
+                Object.keys(matchesByWeek).sort((a,b) => a-b).forEach(p => { mgmtMatchesList.innerHTML += `<h4 class="font-bold mt-2 text-gray-500">Pekan ${p}</h4>`; matchesByWeek[p].forEach(m => { mgmtMatchesList.innerHTML += `<div class="bg-gray-200 p-2 rounded-md flex justify-between items-center text-sm"><span>${m.homeTeam} vs ${m.awayTeam}</span><div><button onclick="editMatch(${m.matchId})" class="text-yellow-500 px-1">✏️</button><button onclick="deleteMatch(${m.matchId})" class="text-red-500 px-1">🗑️</button></div></div>`; }); });
             }
         }
+        document.querySelectorAll('.tab-btn').forEach(b => { b.addEventListener('click', () => { document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.remove('border-purple-500', 'text-purple-600'); btn.classList.add('border-transparent', 'text-gray-500'); }); b.classList.add('border-purple-500', 'text-purple-600'); document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); document.getElementById(`${b.dataset.tab}-content`).classList.remove('hidden'); }); });
         
-        // Tab switching in management modal
-        document.querySelectorAll('.tab-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(btn => {
-                    btn.classList.remove('border-purple-500', 'text-purple-600');
-                    btn.classList.add('border-transparent', 'text-gray-500');
-                });
-                button.classList.add('border-purple-500', 'text-purple-600');
-                document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-                document.getElementById(`${button.dataset.tab}-content`).classList.remove('hidden');
-            });
-        });
-        
-        // --- CRUD OPERATIONS (made global for inline onclick) ---
-        window.setActiveLeague = (id) => {
-            appData.activeLeagueId = id;
-            saveData();
-            renderManagementModal(); // Re-render modal content
-        };
-
-        // LEAGUE CRUD
+        window.setActiveLeague = async (id) => { appData.activeLeagueId = id; await saveData(); renderManagementModal(); };
         function openLeagueEditor(leagueId = null) {
             editingLeagueId = leagueId;
-            leagueEditorName.value = '';
-            existingTeamsChecklist.innerHTML = '';
-            newTeamsTextarea.value = '';
-
-            // Get all unique team names from all leagues
+            leagueEditorName.value = ''; existingTeamsChecklist.innerHTML = ''; newTeamsTextarea.value = '';
             const allTeams = new Set();
             appData.leagues.forEach(l => l.teams.forEach(t => allTeams.add(t)));
-            
             let leagueToEdit = null;
-            if (leagueId) {
-                leagueEditorTitle.textContent = 'Edit Liga';
-                leagueToEdit = appData.leagues.find(l => l.id === leagueId);
-                leagueEditorName.value = leagueToEdit.name;
-            } else {
-                leagueEditorTitle.textContent = 'Tambah Liga Baru';
-            }
-
-            allTeams.forEach(teamName => {
-                const isChecked = leagueToEdit && leagueToEdit.teams.includes(teamName) ? 'checked' : '';
-                const checkboxHtml = `
-                    <label class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 cursor-pointer">
-                        <input type="checkbox" value="${teamName}" ${isChecked} class="form-checkbox bg-gray-200 border-gray-300 text-purple-600 focus:ring-purple-500">
-                        <span>${teamName}</span>
-                    </label>
-                `;
-                existingTeamsChecklist.innerHTML += checkboxHtml;
-            });
-            
+            if (leagueId) { leagueEditorTitle.textContent = 'Edit Liga'; leagueToEdit = appData.leagues.find(l => l.id === leagueId); leagueEditorName.value = leagueToEdit.name; } 
+            else { leagueEditorTitle.textContent = 'Tambah Liga Baru'; }
+            allTeams.forEach(teamName => { const isChecked = leagueToEdit && leagueToEdit.teams.includes(teamName) ? 'checked' : ''; existingTeamsChecklist.innerHTML += `<label class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 cursor-pointer"><input type="checkbox" value="${teamName}" ${isChecked} class="form-checkbox bg-gray-200 border-gray-300 text-purple-600 focus:ring-purple-500"><span>${teamName}</span></label>`; });
             leagueEditorModal.classList.remove('hidden');
         }
-
         document.getElementById('add-league-btn').addEventListener('click', () => openLeagueEditor());
         cancelLeagueBtn.addEventListener('click', () => leagueEditorModal.classList.add('hidden'));
-        
-        saveLeagueBtn.addEventListener('click', () => {
-            const name = leagueEditorName.value.trim();
-            if (!name) {
-                alert('Nama liga tidak boleh kosong.');
-                return;
-            }
-
-            const selectedTeams = Array.from(existingTeamsChecklist.querySelectorAll('input:checked')).map(input => input.value);
-            const newTeams = newTeamsTextarea.value.split(',')
-                .map(t => t.trim())
-                .filter(t => t.length > 0);
-
+        saveLeagueBtn.addEventListener('click', async () => {
+            const name = leagueEditorName.value.trim(); if (!name) { alert('Nama liga tidak boleh kosong.'); return; }
+            const selectedTeams = Array.from(existingTeamsChecklist.querySelectorAll('input:checked')).map(i => i.value);
+            const newTeams = newTeamsTextarea.value.split(',').map(t => t.trim()).filter(t => t.length > 0);
             const finalTeams = [...new Set([...selectedTeams, ...newTeams])];
-            
-            if (finalTeams.map(t => t.toLowerCase()).includes('libur')) {
-                alert('Nama tim tidak boleh "Libur".');
-                return;
-            }
-
+            if (finalTeams.map(t => t.toLowerCase()).includes('libur')) { alert('Nama tim tidak boleh "Libur".'); return; }
             const generateMatches = document.getElementById('generate-matches-checkbox').checked;
-
-            if (editingLeagueId) { // Editing existing league
+            if (editingLeagueId) {
                 const league = appData.leagues.find(l => l.id === editingLeagueId);
                 league.name = name;
-                
                 const removedTeams = league.teams.filter(t => !finalTeams.includes(t));
-                if (removedTeams.length > 0) {
-                     league.matches = league.matches.filter(m => !removedTeams.includes(m.homeTeam) && !removedTeams.includes(m.awayTeam));
-                }
+                if (removedTeams.length > 0) league.matches = league.matches.filter(m => !removedTeams.includes(m.homeTeam) && !removedTeams.includes(m.awayTeam));
                 league.teams = finalTeams;
-
-                if (generateMatches) {
-                    if (league.matches.length > 0) {
-                        if (!confirm('Anda akan men-generate jadwal baru. Semua data pertandingan yang ada di liga ini akan dihapus. Lanjutkan?')) {
-                            return; // Stop if user cancels
-                        }
-                    }
-                    league.matches = generateRoundRobinMatches(finalTeams);
-                }
-
-            } else { // Adding new league
+                if (generateMatches && (!league.matches.length || confirm('Generate jadwal baru akan menghapus semua pertandingan yang ada. Lanjutkan?'))) league.matches = generateRoundRobinMatches(finalTeams);
+            } else {
                 const newLeague = { id: crypto.randomUUID(), name, teams: finalTeams, matches: [] };
-                if (generateMatches) {
-                    newLeague.matches = generateRoundRobinMatches(finalTeams);
-                }
-                appData.leagues.push(newLeague);
-                appData.activeLeagueId = newLeague.id;
+                if (generateMatches) newLeague.matches = generateRoundRobinMatches(finalTeams);
+                appData.leagues.push(newLeague); appData.activeLeagueId = newLeague.id;
             }
-
-            saveData();
-            renderAll();
-            leagueEditorModal.classList.add('hidden');
+            await saveData(); renderAll(); leagueEditorModal.classList.add('hidden');
         });
 
         function generateRoundRobinMatches(teams) {
-            const allMatches = [];
-            if (teams.length < 2) return allMatches;
-
-            let teamList = [...teams];
-            if (teamList.length % 2 !== 0) {
-                teamList.push("Libur"); // Add a dummy team for odd numbers
-            }
-
-            const numTeams = teamList.length;
-            const numRounds = numTeams - 1;
-            const halfSeasonMatches = [];
-
-            for (let round = 0; round < numRounds; round++) {
-                for (let i = 0; i < numTeams / 2; i++) {
-                    const home = teamList[i];
-                    const away = teamList[numTeams - 1 - i];
-                    halfSeasonMatches.push({ pekan: round + 1, homeTeam: home, awayTeam: away });
-                }
-                // Rotate teams, keeping the first one fixed
-                teamList.splice(1, 0, teamList.pop());
-            }
-
-            // First half of the season
-            halfSeasonMatches.forEach((match, index) => {
-                allMatches.push({ ...match, matchId: Date.now() + index, homeScore: null, awayScore: null, status: 'Scheduled' });
-            });
-
-            // Second half (reverse fixtures)
-            halfSeasonMatches.forEach((match, index) => {
-                allMatches.push({
-                    pekan: match.pekan + numRounds,
-                    homeTeam: match.awayTeam,
-                    awayTeam: match.homeTeam,
-                    matchId: Date.now() + index + halfSeasonMatches.length,
-                    homeScore: null, awayScore: null, status: 'Scheduled'
-                });
-            });
-
+            const allMatches = []; if (teams.length < 2) return allMatches; let teamList = [...teams]; if (teamList.length % 2 !== 0) teamList.push("Libur");
+            const numTeams = teamList.length, numRounds = numTeams - 1, halfSeasonMatches = [];
+            for (let round = 0; round < numRounds; round++) { for (let i = 0; i < numTeams / 2; i++) halfSeasonMatches.push({ pekan: round + 1, homeTeam: teamList[i], awayTeam: teamList[numTeams - 1 - i] }); teamList.splice(1, 0, teamList.pop()); }
+            halfSeasonMatches.forEach((m, i) => allMatches.push({ ...m, matchId: Date.now() + i, homeScore: null, awayScore: null, status: 'Scheduled' }));
+            halfSeasonMatches.forEach((m, i) => allMatches.push({ pekan: m.pekan + numRounds, homeTeam: m.awayTeam, awayTeam: m.homeTeam, matchId: Date.now() + i + halfSeasonMatches.length, homeScore: null, awayScore: null, status: 'Scheduled' }));
             return allMatches;
         }
 
-        window.editLeague = (id) => {
-            openLeagueEditor(id);
-        };
-        window.deleteLeague = (id) => {
-            if(confirm('Anda yakin ingin menghapus liga ini? Semua tim dan pertandingan di dalamnya akan hilang.')) {
-                appData.leagues = appData.leagues.filter(l => l.id !== id);
-                if(appData.activeLeagueId === id) {
-                    appData.activeLeagueId = appData.leagues.length > 0 ? appData.leagues[0].id : null;
-                }
-                saveData(); renderAll();
-            }
-        };
-
-        // TEAM CRUD
-        document.getElementById('add-team-btn').addEventListener('click', () => {
-            const name = prompt('Masukkan nama tim baru:');
-            if(name) {
-                if(name.toLowerCase() === 'libur') {
-                    alert('Nama tim tidak boleh "Libur".');
-                    return;
-                }
-                const league = getActiveLeague();
-                if (league && !league.teams.includes(name)) {
-                    league.teams.push(name);
-                    saveData(); renderAll();
-                } else { alert('Tim sudah ada atau liga tidak dipilih.'); }
-            }
-        });
-        window.editTeam = (oldName) => {
-            const newName = prompt('Masukkan nama tim baru:', oldName);
-            if (newName && newName.toLowerCase() === 'libur') {
-                alert('Nama tim tidak boleh "Libur".');
-                return;
-            }
-            const league = getActiveLeague();
-            if (newName && newName !== oldName && league) {
-                league.teams = league.teams.map(t => t === oldName ? newName : t);
-                league.matches.forEach(m => {
-                    if (m.homeTeam === oldName) m.homeTeam = newName;
-                    if (m.awayTeam === oldName) m.awayTeam = newName;
-                });
-                saveData(); renderAll();
-            }
-        };
-        window.deleteTeam = (name) => {
-             if(confirm(`Yakin ingin menghapus tim "${name}"? Semua pertandingan yang melibatkan tim ini juga akan dihapus.`)) {
-                const league = getActiveLeague();
-                if(league){
-                    league.teams = league.teams.filter(t => t !== name);
-                    league.matches = league.matches.filter(m => m.homeTeam !== name && m.awayTeam !== name);
-                    saveData(); renderAll();
-                }
-            }
-        };
-
-        // MATCH CRUD
-        document.getElementById('add-match-btn').addEventListener('click', () => {
-            const league = getActiveLeague();
-            if (!league || league.teams.length < 2) { alert('Tidak cukup tim untuk membuat pertandingan.'); return; }
-            const pekan = prompt('Masukkan pekan pertandingan:');
-            const homeTeam = prompt(`Pilih tim kandang:\n${league.teams.join(', ')}`);
-            const awayTeam = prompt(`Pilih tim tandang:\n${league.teams.join(', ')}`);
-            if(pekan && homeTeam && awayTeam && league.teams.includes(homeTeam) && league.teams.includes(awayTeam) && homeTeam !== awayTeam) {
-                const newMatch = {
-                    pekan: parseInt(pekan),
-                    matchId: Date.now(), // simple unique ID
-                    homeTeam, awayTeam,
-                    homeScore: null, awayScore: null,
-                    status: 'Scheduled'
-                };
-                league.matches.push(newMatch);
-                saveData(); renderAll();
-            } else { alert('Input tidak valid. Pastikan tim ada dan tidak sama.'); }
-        });
+        window.editLeague = (id) => openLeagueEditor(id);
+        window.deleteLeague = async (id) => { if(confirm('Yakin ingin menghapus liga ini?')) { appData.leagues = appData.leagues.filter(l => l.id !== id); if(appData.activeLeagueId === id) appData.activeLeagueId = appData.leagues.length ? appData.leagues[0].id : null; await saveData(); renderAll(); } };
+        document.getElementById('add-team-btn').addEventListener('click', async () => { const n = prompt('Nama tim baru:'); if(n) { if(n.toLowerCase() === 'libur') { alert('Nama tim tidak boleh "Libur".'); return; } const l = getActiveLeague(); if (l && !l.teams.includes(n)) { l.teams.push(n); await saveData(); renderAll(); } else { alert('Tim sudah ada.'); } } });
+        window.editTeam = async (o) => { const n = prompt('Nama tim baru:', o); if (n && n.toLowerCase() === 'libur') { alert('Nama tim tidak boleh "Libur".'); return; } const l = getActiveLeague(); if (n && n !== o && l) { l.teams = l.teams.map(t => t === o ? n : t); l.matches.forEach(m => { if (m.homeTeam === o) m.homeTeam = n; if (m.awayTeam === o) m.awayTeam = n; }); await saveData(); renderAll(); } };
+        window.deleteTeam = async (n) => { if(confirm(`Hapus tim "${n}"?`)) { const l = getActiveLeague(); if(l){ l.teams = l.teams.filter(t => t !== n); l.matches = l.matches.filter(m => m.homeTeam !== n && m.awayTeam !== n); await saveData(); renderAll(); } } };
+        document.getElementById('add-match-btn').addEventListener('click', async () => { const l = getActiveLeague(); if (!l || l.teams.length < 2) { alert('Tim tidak cukup.'); return; } const p = prompt('Pekan:'); const h = prompt(`Tim kandang:\n${l.teams.join(', ')}`); const a = prompt(`Tim tandang:\n${l.teams.join(', ')}`); if(p && h && a && l.teams.includes(h) && l.teams.includes(a) && h !== a) { l.matches.push({ pekan: parseInt(p), matchId: Date.now(), homeTeam: h, awayTeam: a, homeScore: null, awayScore: null, status: 'Scheduled' }); await saveData(); renderAll(); } else { alert('Input tidak valid.'); } });
         window.editMatch = (id) => { alert('Fungsi edit pertandingan belum diimplementasikan.'); };
-        window.deleteMatch = (id) => {
-            if(confirm('Yakin ingin menghapus pertandingan ini?')) {
-                const league = getActiveLeague();
-                if(league){
-                    league.matches = league.matches.filter(m => m.matchId !== id);
-                    saveData(); renderAll();
-                }
-            }
-        };
-        
-        window.updateScore = (matchId) => {
-            const homeScore = parseInt(document.getElementById(`homeScore-${matchId}`).value, 10);
-            const awayScore = parseInt(document.getElementById(`awayScore-${matchId}`).value, 10);
-
-            if (isNaN(homeScore) || isNaN(awayScore)) { alert('Mohon isi kedua skor dengan angka.'); return; }
-
-            const league = getActiveLeague();
-            const match = league.matches.find(m => m.matchId === matchId);
-            if (match) {
-                match.homeScore = homeScore; match.awayScore = awayScore; match.status = 'Finished';
-                saveData(); renderAll();
-            }
+        window.deleteMatch = async (id) => { if(confirm('Hapus pertandingan ini?')) { const l = getActiveLeague(); if(l){ l.matches = l.matches.filter(m => m.matchId !== id); await saveData(); renderAll(); } } };
+        window.updateScore = async (matchId) => {
+            const homeScore = parseInt(document.getElementById(`homeScore-${matchId}`).value, 10), awayScore = parseInt(document.getElementById(`awayScore-${matchId}`).value, 10);
+            if (isNaN(homeScore) || isNaN(awayScore)) { alert('Skor harus angka.'); return; }
+            const league = getActiveLeague(), match = league.matches.find(m => m.matchId === matchId);
+            if (match) { match.homeScore = homeScore; match.awayScore = awayScore; match.status = 'Finished'; await saveData(); renderAll(); }
         };
 
         // --- INITIAL LOAD ---
-        loadData();
-        renderAll();
-    });
+        function initializeAppAndAuth() {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    await loadData();
+                } else {
+                    try {
+                        const userCredential = await signInAnonymously(auth);
+                        userId = userCredential.user.uid;
+                        await loadData();
+                    } catch (error) {
+                        console.error("Anonymous sign-in failed", error);
+                        loadingOverlay.innerHTML = '<p class="text-red-500">Gagal terhubung ke server. Coba refresh halaman.</p>';
+                    }
+                }
+            });
+        }
+        
+        initializeAppAndAuth();
     </script>
 </body>
 </html>
