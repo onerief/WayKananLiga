@@ -3,610 +3,567 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Klasemen & Jadwal Liga Efootball</title>
+    <title>Way Kanan EFootball League</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background-color: #f3f4f6; /* bg-gray-100 */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
         }
-        .bg-custom-card { background-color: #ffffff; } /* bg-white */
-        .bg-custom-modal { background-color: #f9fafb; } /* bg-gray-50 */
-
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #e5e7eb; }
-        ::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
-        .modal-backdrop {
-            -webkit-backdrop-filter: blur(4px);
-            backdrop-filter: blur(4px);
+        .header-bg {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
-        .header-gradient {
-            background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(168, 85, 247, 0.1));
+        .card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
+            padding: 1rem;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         }
-        /* Loader styles */
-        #loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #8b5cf6;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.08);
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .btn-primary {
+            background-color: #2563eb;
+            transition: background-color 0.2s;
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+        .admin-section {
+            background-color: #fee2e2;
+            border-left: 4px solid #ef4444;
+            color: #374151;
+        }
+        .table-header {
+            background-color: #f9fafb;
+        }
+        .table-header th {
+            color: #4b5563;
+        }
+        .admin-input-cell {
+            padding: 0.1rem;
+            line-height: 1;
+        }
+        .admin-input-score {
+            width: 28px;
+            height: 24px;
+            padding: 1px;
+            font-size: 0.75rem;
+            border: 1px solid #d1d5db;
+            background-color: #f9fafb;
+            color: #1f2937;
+        }
+        .dense-table th, .dense-table td {
+            padding-top: 4px; 
+            padding-bottom: 4px;
+            padding-left: 4px;
+            padding-right: 4px;
+            font-size: 0.75rem;
+        }
+        .dense-table tbody tr {
+            transition: background-color 0.2s ease-in-out;
+        }
+        .dense-table tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .dense-table tbody tr:hover {
+            background-color: #eff6ff;
+        }
+        .btn-dense {
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+            font-size: 0.65rem;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-100 text-gray-900">
 
-    <!-- Loading Overlay -->
-    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex flex-col items-center justify-center z-50">
-        <div id="loader"></div>
-        <p class="text-white mt-4">Memuat data...</p>
-    </div>
-
-    <!-- Admin Login Modal -->
-    <div id="login-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-70 modal-backdrop flex items-center justify-center z-50">
-        <div class="bg-custom-card p-8 rounded-lg shadow-2xl w-full max-w-sm relative border border-gray-200">
-            <button id="close-login-btn" class="absolute top-3 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold focus:outline-none">&times;</button>
-            <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">Login Admin</h2>
-            <form id="login-form">
-                <div class="mb-4">
-                    <label for="password" class="block text-gray-600 mb-2">Password</label>
-                    <input type="password" id="password" class="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500" required>
-                </div>
-                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 transform hover:scale-105">Masuk</button>
-                <p id="login-error" class="text-red-500 text-center mt-4 hidden">Password salah!</p>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Management Modal -->
-    <div id="management-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-70 modal-backdrop flex items-center justify-center z-40 p-4">
-        <div class="bg-custom-card rounded-lg shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col relative border border-gray-200 text-gray-800">
-            <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                <h2 class="text-2xl font-bold text-gray-900">Panel Pengelolaan</h2>
-                <button id="close-management-btn" class="text-gray-500 hover:text-gray-800 text-2xl font-bold focus:outline-none">&times;</button>
-            </div>
-            <div class="flex-grow p-4 overflow-y-auto bg-gray-50">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Kolom Liga -->
-                    <div class="md:col-span-1 bg-white p-4 rounded-lg border border-gray-200">
-                        <h3 class="text-xl font-semibold mb-3 text-gray-900">Daftar Liga</h3>
-                        <div id="leagues-list" class="space-y-2 mb-4"></div>
-                        <button id="add-league-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Tambah Liga Baru</button>
-                    </div>
-                    <!-- Kolom Tim & Pertandingan -->
-                    <div class="md:col-span-2 bg-white p-4 rounded-lg border border-gray-200">
-                        <div class="flex border-b border-gray-200 mb-4">
-                            <button data-tab="teams" class="tab-btn flex-1 py-2 text-center font-semibold border-b-2 border-purple-500 text-purple-600">Tim</button>
-                            <button data-tab="matches" class="tab-btn flex-1 py-2 text-center font-semibold border-transparent text-gray-500 hover:text-gray-800">Pertandingan</button>
-                        </div>
-                        <!-- Konten Tab Tim -->
-                        <div id="teams-content" class="tab-content">
-                            <div id="teams-list" class="space-y-2 mb-4"></div>
-                            <button id="add-team-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Tambah Tim Baru</button>
-                        </div>
-                        <!-- Konten Tab Pertandingan -->
-                        <div id="matches-content" class="hidden tab-content">
-                             <div id="matches-list" class="space-y-4 mb-4"></div>
-                            <button id="add-match-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Tambah Pertandingan</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- League Editor Modal -->
-    <div id="league-editor-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-70 modal-backdrop flex items-center justify-center z-50 p-4">
-        <div class="bg-custom-card rounded-lg shadow-2xl w-full max-w-2xl h-[90vh] flex flex-col relative border border-gray-200 text-gray-800">
-            <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                <h2 id="league-editor-title" class="text-2xl font-bold text-gray-900"></h2>
-                <button id="cancel-league-btn" class="text-gray-500 hover:text-gray-800 text-2xl font-bold focus:outline-none">&times;</button>
-            </div>
-            <div class="flex-grow p-6 overflow-y-auto">
-                <div class="mb-6">
-                    <label for="league-editor-name" class="block text-gray-600 mb-2 font-semibold">Nama Liga</label>
-                    <input type="text" id="league-editor-name" class="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                </div>
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-3">Pilih Tim yang Sudah Ada</h3>
-                    <div id="existing-teams-checklist" class="max-h-48 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 p-3 bg-gray-50 rounded-md border border-gray-200">
-                        <!-- Checkboxes will be injected here -->
-                    </div>
-                </div>
-                <div>
-                     <h3 class="text-lg font-semibold text-gray-700 mb-3">Tambah Tim Baru</h3>
-                    <p class="text-sm text-gray-500 mb-2">Pisahkan setiap nama tim dengan koma.</p>
-                    <textarea id="new-teams-textarea" rows="3" class="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Contoh: Tim A, Tim B, Tim C"></textarea>
-                </div>
-                <div class="mt-6">
-                    <label class="flex items-center space-x-3 cursor-pointer">
-                        <input type="checkbox" id="generate-matches-checkbox" class="form-checkbox h-5 w-5 bg-gray-200 border-gray-300 text-purple-600 focus:ring-purple-500">
-                        <span class="text-gray-700 font-semibold">Generate Jadwal Otomatis (Kompetisi Penuh)</span>
-                    </label>
-                    <p class="text-sm text-gray-500 mt-2 ml-8">
-                        Penting: Jika dicentang, semua jadwal pertandingan yang ada untuk liga ini akan dihapus dan diganti dengan jadwal baru.
-                    </p>
-                </div>
-            </div>
-            <div class="p-4 bg-gray-50 border-t border-gray-200">
-                <button id="save-league-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Simpan Liga</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div id="main-content" class="invisible">
-        <div class="container mx-auto p-4 md:p-8">
-            <header class="relative text-center mb-10 bg-white rounded-xl p-6 shadow-lg border border-gray-200">
-                <div class="flex items-center justify-center">
-                    <h1 id="league-title" class="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight"></h1>
-                </div>
-                <p class="text-gray-500 mt-2">Klasemen, Jadwal, dan Hasil Pertandingan</p>
-                
-                <div class="mt-8 flex flex-col items-center space-y-4">
-                    <!-- Tombol Admin -->
-                    <div class="flex justify-center items-center space-x-4">
-                        <button id="manage-data-btn" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-lg transition duration-300 shadow-md">Kelola Data</button>
-                        <button id="show-login-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-5 rounded-lg transition duration-300 shadow-md transform hover:scale-105">Login Admin</button>
-                        <button id="exit-admin-btn" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-5 rounded-lg transition duration-300 shadow-md">Keluar Mode Admin</button>
-                    </div>
-                    <!-- Pilihan Liga -->
-                    <div class="flex items-center mt-4">
-                        <label for="league-selector" class="mr-2 text-gray-500">Pilih Liga:</label>
-                        <select id="league-selector" class="bg-gray-200 border border-gray-300 rounded-lg px-3 py-1 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"></select>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Tab Navigation -->
-            <div class="mb-6 border-b border-gray-200">
-                <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                    <button id="tab-btn-klasemen" class="tab-main-btn whitespace-nowrap py-4 px-1 border-b-2 font-semibold text-base border-purple-500 text-purple-600">
-                        Klasemen
-                    </button>
-                    <button id="tab-btn-jadwal" class="tab-main-btn whitespace-nowrap py-4 px-1 border-b-2 font-semibold text-base border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-400">
-                        Jadwal & Hasil
-                    </button>
-                </nav>
-            </div>
-
-            <!-- Tab Content -->
-            <div>
-                <!-- Klasemen Panel -->
-                <div id="tab-content-klasemen" class="tab-main-content bg-custom-card p-4 md:p-6 rounded-lg shadow-lg border border-gray-200/80">
-                    <h2 class="text-2xl font-bold mb-4 border-b border-gray-200 pb-2 text-gray-900">Klasemen Liga</h2>
-                    <div id="table-placeholder" class="text-center py-10 text-gray-400">Belum ada tim di liga ini.</div>
-                    <div id="table-container" class="overflow-x-auto">
-                        <table class="w-full text-xs text-left">
-                            <thead class="text-xs text-gray-500 uppercase bg-gray-100">
-                                <tr>
-                                    <th scope="col" class="px-1 py-2">Pos</th><th scope="col" class="px-2 py-2">Team</th><th scope="col" class="px-1 py-2 text-center" title="Played">P</th><th scope="col" class="px-1 py-2 text-center" title="Won">W</th><th scope="col" class="px-1 py-2 text-center" title="Drawn">D</th><th scope="col" class="px-1 py-2 text-center" title="Lost">L</th><th scope="col" class="px-1 py-2 text-center" title="Goals For">GF</th><th scope="col" class="px-1 py-2 text-center" title="Goals Against">GA</th><th scope="col" class="px-1 py-2 text-center" title="Goal Difference">GD</th><th scope="col" class="px-1 py-2 text-center" title="Points">Pts</th>
-                                </tr>
-                            </thead>
-                            <tbody id="league-table-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Jadwal Panel -->
-                <div id="tab-content-jadwal" class="tab-main-content hidden">
-                    <div id="admin-view-header" class="hidden text-center mb-4 p-2 bg-green-100 border border-green-300 rounded-lg"><h2 class="text-xl font-bold text-green-800">Panel Admin Aktif</h2></div>
-                    <div id="fixtures-list" class="space-y-6"></div>
-                </div>
-            </div>
-            
-            <footer class="text-center mt-12 text-gray-400"><p>Dibuat untuk Komunitas Efootball</p></footer>
-        </div>
-    </div>
-
-    <!-- Firebase SDK -->
+    <!-- Firebase Imports (MUST be type="module") -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, getDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- FIREBASE CONFIGURATION ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyCfikX-HQuKhtSksHzyJwuBF-dUr0ckGRE",
-            authDomain: "wayliga.firebaseapp.com",
-            projectId: "wayliga",
-            storageBucket: "wayliga.appspot.com",
-            messagingSenderId: "178418335963",
-            appId: "1:178418335963:web:a9ff5dadc64fa9cdcf8cfe",
-            measurementId: "G-5QDKCZDL8X"
+        setLogLevel('Debug');
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth;
+        const ADMIN_PASSWORD = 'adminganteng';
+        let leagueData = null;
+        let isAdminLoggedIn = false; 
+        let currentView = 'schedule';
+        let generatedLeagueData = null; // Holds newly generated schedule
+
+        const getLeagueDocRef = (dbInstance) => {
+            return doc(dbInstance, 'artifacts', appId, 'public', 'data', 'leagues', 'activeLeague');
         };
 
-        // Firebase instances
-        let app, db, auth, userId;
+        const getOriginalInitialData = () => {
+            // This data is now a fallback, generator should be used for new leagues.
+            const rawSchedule = [
+                { home: 'Arief', away: 'Dexulmantap', babak: 1, match: 1 }, { home: 'Bayu', away: 'Ptangpteng', babak: 1, match: 2 }, { home: 'Tuku Pulsa Tsel', away: 'Gusmurtad', babak: 1, match: 3 }, { home: 'The Familia FC', away: 'Riders', babak: 1, match: 4 }, { status: 'Bye', babak: 1, byeTeam: 'Ipangopen' },
+                { home: 'Ipangopen', away: 'Riders', babak: 2, match: 5 }, { home: 'Arief', away: 'Gusmurtad', babak: 2, match: 6 }, { home: 'Ptangpteng', away: 'Tuku Pulsa Tsel', babak: 2, match: 7 }, { home: 'Dexulmantap', away: 'The Familia FC', babak: 2, match: 8 }, { status: 'Bye', babak: 2, byeTeam: 'Bayu' },
+                { home: 'Ipangopen', away: 'Arief', babak: 3, match: 9 }, { home: 'Bayu', away: 'Gusmurtad', babak: 3, match: 10 }, { home: 'Ptangpteng', away: 'Riders', babak: 3, match: 11 }, { home: 'Tuku Pulsa Tsel', away: 'The Familia FC', babak: 3, match: 12 }, { status: 'Bye', babak: 3, byeTeam: 'Dexulmantap' },
+                { home: 'Ipangopen', away: 'Bayu', babak: 4, match: 13 }, { home: 'Arief', away: 'Ptangpteng', babak: 4, match: 14 }, { home: 'Gusmurtad', away: 'The Familia FC', babak: 4, match: 15 }, { home: 'Dexulmantap', away: 'Riders', babak: 4, match: 16 }, { status: 'Bye', babak: 4, byeTeam: 'Tuku Pulsa Tsel' },
+                { home: 'Ipangopen', away: 'Ptangpteng', babak: 5, match: 17 }, { home: 'Bayu', away: 'The Familia FC', babak: 5, match: 18 }, { home: 'Arief', away: 'Tuku Pulsa Tsel', babak: 5, match: 19 }, { home: 'Gusmurtad', away: 'Dexulmantap', babak: 5, match: 20 }, { status: 'Bye', babak: 5, byeTeam: 'Riders' },
+                { home: 'Ipangopen', away: 'Tuku Pulsa Tsel', babak: 6, match: 21 }, { home: 'Bayu', away: 'Dexulmantap', babak: 6, match: 22 }, { home: 'Ptangpteng', away: 'Gusmurtad', babak: 6, match: 23 }, { home: 'Riders', away: 'Arief', babak: 6, match: 24 }, { status: 'Bye', babak: 6, byeTeam: 'The Familia FC' },
+                { home: 'Ipangopen', away: 'Gusmurtad', babak: 7, match: 25 }, { home: 'Bayu', away: 'Tuku Pulsa Tsel', babak: 7, match: 26 }, { home: 'Ptangpteng', away: 'The Familia FC', babak: 7, match: 27 }, { home: 'Riders', away: 'Dexulmantap', babak: 7, match: 28 }, { status: 'Bye', babak: 7, byeTeam: 'Arief' },
+                { home: 'Ipangopen', away: 'The Familia FC', babak: 8, match: 29 }, { home: 'Bayu', away: 'Arief', babak: 8, match: 30 }, { home: 'Ptangpteng', away: 'Dexulmantap', babak: 8, match: 31 }, { home: 'Tuku Pulsa Tsel', away: 'Riders', babak: 8, match: 32 }, { status: 'Bye', babak: 8, byeTeam: 'Gusmurtad' },
+                { home: 'Arief', away: 'The Familia FC', babak: 9, match: 33 }, { home: 'Bayu', away: 'Riders', babak: 9, match: 34 }, { home: 'Dexulmantap', away: 'Tuku Pulsa Tsel', babak: 9, match: 35 }, { home: 'Ipangopen', away: 'Gusmurtad', babak: 9, match: 36 }, { status: 'Bye', babak: 9, byeTeam: 'Ptangpteng' },
+                { home: 'Dexulmantap', away: 'Arief', babak: 10, match: 37 }, { home: 'Ptangpteng', away: 'Bayu', babak: 10, match: 38 }, { home: 'Gusmurtad', away: 'Tuku Pulsa Tsel', babak: 10, match: 39 }, { home: 'Riders', away: 'The Familia FC', babak: 10, match: 40 }, { status: 'Bye', babak: 10, byeTeam: 'Ipangopen' },
+                { home: 'Riders', away: 'Ipangopen', babak: 11, match: 41 }, { home: 'Gusmurtad', away: 'Arief', babak: 11, match: 42 }, { home: 'Tuku Pulsa Tsel', away: 'Ptangpteng', babak: 11, match: 43 }, { home: 'The Familia FC', away: 'Dexulmantap', babak: 11, match: 44 }, { status: 'Bye', babak: 11, byeTeam: 'Bayu' },
+                { home: 'Arief', away: 'Ipangopen', babak: 12, match: 45 }, { home: 'Gusmurtad', away: 'Bayu', babak: 12, match: 46 }, { home: 'Riders', away: 'Ptangpteng', babak: 12, match: 47 }, { home: 'The Familia FC', away: 'Tuku Pulsa Tsel', babak: 12, match: 48 }, { status: 'Bye', babak: 12, byeTeam: 'Dexulmantap' },
+                { home: 'Bayu', away: 'Ipangopen', babak: 13, match: 49 }, { home: 'Ptangpteng', away: 'Arief', babak: 13, match: 50 }, { home: 'The Familia FC', away: 'Gusmurtad', babak: 13, match: 51 }, { home: 'Riders', away: 'Dexulmantap', babak: 13, match: 52 }, { status: 'Bye', babak: 13, byeTeam: 'Tuku Pulsa Tsel' },
+                { home: 'Ptangpteng', away: 'Ipangopen', babak: 14, match: 53 }, { home: 'The Familia FC', away: 'Bayu', babak: 14, match: 54 }, { home: 'Tuku Pulsa Tsel', away: 'Arief', babak: 14, match: 55 }, { home: 'Dexulmantap', away: 'Gusmurtad', babak: 14, match: 56 }, { status: 'Bye', babak: 14, byeTeam: 'Riders' },
+                { home: 'Tuku Pulsa Tsel', away: 'Ipangopen', babak: 15, match: 57 }, { home: 'Dexulmantap', away: 'Bayu', babak: 15, match: 58 }, { home: 'Gusmurtad', away: 'Ptangpteng', babak: 15, match: 59 }, { home: 'Arief', away: 'Riders', babak: 15, match: 60 }, { status: 'Bye', babak: 15, byeTeam: 'The Familia FC' },
+                { home: 'Gusmurtad', away: 'Ipangopen', babak: 16, match: 61 }, { home: 'Tuku Pulsa Tsel', away: 'Bayu', babak: 16, match: 62 }, { home: 'The Familia FC', away: 'Ptangpteng', babak: 16, match: 63 }, { home: 'Dexulmantap', away: 'Riders', babak: 16, match: 64 }, { status: 'Bye', babak: 16, byeTeam: 'Arief' },
+                { home: 'The Familia FC', away: 'Ipangopen', babak: 17, match: 65 }, { home: 'Arief', away: 'Bayu', babak: 17, match: 66 }, { home: 'Dexulmantap', away: 'Ptangpteng', babak: 17, match: 67 }, { home: 'Riders', away: 'Tuku Pulsa Tsel', babak: 17, match: 68 }, { status: 'Bye', babak: 17, byeTeam: 'Gusmurtad' },
+                { home: 'Tuku Pulsa Tsel', away: 'Dexulmantap', babak: 18, match: 69 }, { home: 'Riders', away: 'Bayu', babak: 18, match: 70 }, { home: 'The Familia FC', away: 'Arief', babak: 18, match: 71 }, { home: 'Ipangopen', away: 'Gusmurtad', babak: 18, match: 72 }, { status: 'Bye', babak: 18, byeTeam: 'Ptangpteng' }
+            ];
 
-        // --- DATA INITIALIZATION ---
-        function getInitialData() {
-             return {
-                leagues: [{
-                    id: crypto.randomUUID(),
-                    name: 'Liga EFootball Way Kanan',
-                    teams: ["Arief HD", "Dexulmantap", "Bayu", "Ptangpteng", "Tuku Pulsa Tsel", "Gusmurtad", "The Familia FC", "Riders", "Ipangopen"],
-                    matches: [
-                        { pekan: 1, matchId: 1, homeTeam: "Arief HD", homeScore: 3, awayScore: 2, awayTeam: "Dexulmantap", status: "Finished" },{ pekan: 1, matchId: 2, homeTeam: "Bayu", homeScore: 2, awayScore: 3, awayTeam: "Ptangpteng", status: "Finished" },{ pekan: 1, matchId: 3, homeTeam: "Tuku Pulsa Tsel", homeScore: 3, awayScore: 4, awayTeam: "Gusmurtad", status: "Finished" },{ pekan: 1, matchId: 4, homeTeam: "The Familia FC", homeScore: 0, awayScore: 3, awayTeam: "Riders", status: "Finished" }, { pekan: 1, matchId: 101, homeTeam: "Ipangopen", awayTeam: "Libur", status: "Scheduled" },
-                        { pekan: 2, matchId: 5, homeTeam: "Ipangopen", homeScore: 8, awayScore: 2, awayTeam: "Riders", status: "Finished" },{ pekan: 2, matchId: 6, homeTeam: "Arief HD", homeScore: 3, awayScore: 3, awayTeam: "Gusmurtad", status: "Finished" },{ pekan: 2, matchId: 7, homeTeam: "Ptangpteng", homeScore: 2, awayScore: 1, awayTeam: "Tuku Pulsa Tsel", status: "Finished" },{ pekan: 2, matchId: 8, homeTeam: "Dexulmantap", homeScore: 3, awayScore: 6, awayTeam: "The Familia FC", status: "Finished" }, { pekan: 2, matchId: 102, homeTeam: "Bayu", awayTeam: "Libur", status: "Scheduled" },
-                    ]
-                }],
-                activeLeagueId: null
+            const finalSchedule = rawSchedule.map(match => {
+                if (match.status === 'Bye') { return { ...match, home: null, away: null, homeScore: null, awayScore: null, match: null }; }
+                return { ...match, homeScore: null, awayScore: null, status: 'Scheduled' };
+            });
+            const teams = ['Arief', 'Dexulmantap', 'Bayu', 'Ptangpteng', 'Tuku Pulsa Tsel', 'Gusmurtad', 'The Familia FC', 'Riders', 'Ipangopen'];
+            return {
+                teams: teams.map(name => ({ name, points: 0, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, diff: 0 })),
+                schedule: finalSchedule, title: 'Way Kanan EFootball League'
             };
-        }
-
-        let appData = {};
-        let isAdmin = false;
-
-        // --- DOM ELEMENTS ---
-        const loadingOverlay = document.getElementById('loading-overlay');
-        const mainContent = document.getElementById('main-content');
-        const loginModal = document.getElementById('login-modal');
-        const loginForm = document.getElementById('login-form');
-        const loginError = document.getElementById('login-error');
-        const showLoginBtn = document.getElementById('show-login-btn');
-        const closeLoginBtn = document.getElementById('close-login-btn');
-        const exitAdminBtn = document.getElementById('exit-admin-btn');
-        const manageDataBtn = document.getElementById('manage-data-btn');
-        const adminViewHeader = document.getElementById('admin-view-header');
-        const leagueTableBody = document.getElementById('league-table-body');
-        const fixturesList = document.getElementById('fixtures-list');
-        const leagueTitle = document.getElementById('league-title');
-        const leagueSelector = document.getElementById('league-selector');
-        const managementModal = document.getElementById('management-modal');
-        const closeManagementBtn = document.getElementById('close-management-btn');
-        const tablePlaceholder = document.getElementById('table-placeholder');
-        const tableContainer = document.getElementById('table-container');
-
-        // Main Tab Elements
-        const tabBtnKlasemen = document.getElementById('tab-btn-klasemen');
-        const tabBtnJadwal = document.getElementById('tab-btn-jadwal');
-        const allTabBtns = document.querySelectorAll('.tab-main-btn');
-        const allTabContents = document.querySelectorAll('.tab-main-content');
-
-        // --- DATA FUNCTIONS ---
-        async function loadData() {
-            if (!userId) return;
-            loadingOverlay.classList.remove('hidden');
-            
-            const docRef = doc(db, "league_data", userId);
+        };
+        
+        const saveDataToCloud = async (dataToSave) => {
+            if (!db) return;
             try {
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    appData = docSnap.data();
-                } else {
-                    console.log("No such document! Creating initial data.");
-                    appData = getInitialData();
-                    if (appData.leagues.length > 0) {
-                        appData.activeLeagueId = appData.leagues[0].id;
-                    }
-                    await saveData(); // Save the initial data to Firestore
-                }
-                if (!appData.activeLeagueId && appData.leagues.length > 0) {
-                    appData.activeLeagueId = appData.leagues[0].id;
-                }
+                await setDoc(getLeagueDocRef(db), dataToSave, { merge: false });
+                updateConnectionStatus(true, "Cloud Database terhubung dan sinkron.");
             } catch (error) {
-                console.error("Error loading data:", error);
-                alert("Gagal memuat data dari server.");
-                appData = getInitialData(); // Fallback to local initial data
-            } finally {
-                renderAll();
-                loadingOverlay.classList.add('hidden');
-                mainContent.classList.remove('invisible');
+                console.error("Gagal menyimpan data ke Firestore:", error);
+                updateConnectionStatus(false, "Kesalahan koneksi Cloud Database: " + error.message);
             }
-        }
-
-        async function saveData() {
-            if (!userId) return;
-            try {
-                await setDoc(doc(db, "league_data", userId), appData);
-            } catch (error) {
-                console.error("Error saving data:", error);
-                alert("Gagal menyimpan data ke server.");
-            }
-        }
-
-        function getActiveLeague() {
-            if (!appData.leagues || appData.leagues.length === 0) return null;
-            return appData.leagues.find(l => l.id === appData.activeLeagueId);
-        }
-
-        // --- RENDER FUNCTIONS ---
-        function renderAll() {
-            renderLeagueSelector();
-            const activeLeague = getActiveLeague();
-            if (!activeLeague) {
-                leagueTitle.textContent = "Tidak Ada Liga";
-                leagueTableBody.innerHTML = '';
-                fixturesList.innerHTML = '';
-                tablePlaceholder.classList.remove('hidden');
-                tableContainer.classList.add('hidden');
-                return;
-            }
-            
-            leagueTitle.textContent = activeLeague.name;
-            const teams = calculateLeagueTable(activeLeague);
-            renderLeagueTable(teams);
-            renderFixtures(activeLeague);
-            if(isAdmin) renderManagementModal();
-        }
-
-        function renderLeagueSelector() {
-            leagueSelector.innerHTML = '';
-            appData.leagues.forEach(league => {
-                const option = document.createElement('option');
-                option.value = league.id;
-                option.textContent = league.name;
-                if (league.id === appData.activeLeagueId) {
-                    option.selected = true;
-                }
-                leagueSelector.appendChild(option);
-            });
-        }
-        
-        function calculateLeagueTable(league) {
-            const teamStats = {};
-            if (!league || !league.teams) return [];
-            
-            league.teams.forEach(teamName => {
-                teamStats[teamName] = { name: teamName, P: 0, M: 0, S: 0, K: 0, GM: 0, GK: 0, SG: 0, Poin: 0 };
-            });
-
-            (league.matches || []).filter(m => m.status === 'Finished').forEach(match => {
-                if (!teamStats[match.homeTeam] || !teamStats[match.awayTeam]) return;
-                const home = teamStats[match.homeTeam];
-                const away = teamStats[match.awayTeam];
-                home.P += 1; away.P += 1; home.GM += match.homeScore; home.GK += match.awayScore; away.GM += match.awayScore; away.GK += match.homeScore;
-                if (match.homeScore > match.awayScore) { home.M += 1; home.Poin += 3; away.K += 1; } 
-                else if (match.homeScore < match.awayScore) { away.M += 1; away.Poin += 3; home.K += 1; } 
-                else { home.S += 1; away.S += 1; home.Poin += 1; away.Poin += 1; }
-            });
-
-            return Object.values(teamStats).map(team => {
-                team.SG = team.GM - team.GK; return team;
-            }).sort((a, b) => b.Poin - a.Poin || b.SG - a.SG || b.GM - a.GM || a.name.localeCompare(b.name));
-        }
-
-        function renderLeagueTable(teams) {
-            if (teams.length === 0) {
-                tablePlaceholder.classList.remove('hidden');
-                tableContainer.classList.add('hidden');
-                return;
-            }
-            tablePlaceholder.classList.add('hidden');
-            tableContainer.classList.remove('hidden');
-            
-            leagueTableBody.innerHTML = '';
-            teams.forEach((team, index) => {
-                const row = document.createElement('tr');
-                row.className = "border-b border-gray-200 hover:bg-gray-100";
-                
-                row.innerHTML = `
-                    <td class="px-1 py-1.5 font-medium text-gray-900">${index + 1}</td>
-                    <td class="px-2 py-1.5 font-semibold text-gray-900 bg-gray-50">${team.name}</td>
-                    <td class="px-1 py-1.5 text-center">${team.P}</td>
-                    <td class="px-1 py-1.5 text-center text-green-600">${team.M}</td>
-                    <td class="px-1 py-1.5 text-center text-yellow-600">${team.S}</td>
-                    <td class="px-1 py-1.5 text-center text-red-600">${team.K}</td>
-                    <td class="px-1 py-1.5 text-center">${team.GM}</td>
-                    <td class="px-1 py-1.5 text-center">${team.GK}</td>
-                    <td class="px-1 py-1.5 text-center">${team.SG}</td>
-                    <td class="px-1 py-1.5 text-center font-bold">${team.Poin}</td>
-                `;
-                leagueTableBody.appendChild(row);
-            });
-        }
-
-        function renderFixtures(league) {
-            fixturesList.innerHTML = '';
-            const matchesByWeek = (league.matches || []).reduce((acc, match) => {
-                (acc[match.pekan] = acc[match.pekan] || []).push(match);
-                return acc;
-            }, {});
-
-            Object.keys(matchesByWeek).sort((a,b) => a-b).forEach(pekan => {
-                const weekContainer = document.createElement('div');
-                weekContainer.className = 'bg-white p-4 rounded-lg shadow-md border border-gray-200/80';
-                
-                const table = document.createElement('table');
-                table.className = 'w-full text-sm';
-                table.innerHTML = `
-                    <thead class="text-lg font-semibold text-purple-600">
-                        <tr>
-                            <th colspan="3" class="text-left pb-3">Pekan ${pekan}</th>
-                        </tr>
-                    </thead>
-                `;
-
-                const tbody = document.createElement('tbody');
-                matchesByWeek[pekan].forEach((match, index) => {
-                    if (match.homeTeam === 'Libur' || match.awayTeam === 'Libur') {
-                        const byeTeam = match.homeTeam === 'Libur' ? match.awayTeam : match.homeTeam;
-                        const rowColor = (index % 2 === 0) ? 'bg-gray-50' : 'bg-white';
-                        tbody.innerHTML += `<tr class="${rowColor}"><td colspan="3" class="w-full text-center py-1 px-2 rounded-md truncate text-gray-500 italic">${byeTeam} (Libur)</td></tr>`;
-                        return;
-                    }
-                    const isScheduled = match.status === 'Scheduled';
-                    let scoreDisplay;
-                    let homeColorClass = 'font-medium', awayColorClass = 'font-medium';
-                    if (!isScheduled) {
-                        if (match.homeScore > match.awayScore) {
-                            homeColorClass = 'font-bold text-green-600'; awayColorClass = 'text-red-600';
-                            scoreDisplay = `<span class="font-bold text-base text-green-600">${match.homeScore}</span><span class="text-gray-800">&nbsp;-&nbsp;</span><span class="font-bold text-base text-red-600">${match.awayScore}</span>`;
-                        } else if (match.homeScore < match.awayScore) {
-                            homeColorClass = 'text-red-600'; awayColorClass = 'font-bold text-green-600';
-                            scoreDisplay = `<span class="font-bold text-base text-red-600">${match.homeScore}</span><span class="text-gray-800">&nbsp;-&nbsp;</span><span class="font-bold text-base text-green-600">${match.awayScore}</span>`;
-                        } else {
-                            homeColorClass = 'text-yellow-600'; awayColorClass = 'text-yellow-600';
-                            scoreDisplay = `<span class="font-bold text-base text-yellow-600">${match.homeScore}&nbsp;-&nbsp;${match.awayScore}</span>`;
-                        }
-                    } else { scoreDisplay = `<span class="text-xs text-gray-500">VS</span>`; }
-                    
-                    const rowColor = (index % 2 === 0) ? 'bg-gray-50' : 'bg-white';
-                    const matchRow = `<tr class="${rowColor}"><td class="w-2/5 text-right py-1 px-2 rounded-l-md truncate pr-3 ${homeColorClass}">${match.homeTeam}</td><td class="w-1/5 text-center py-1 px-2">${scoreDisplay}</td><td class="w-2/5 text-left py-1 px-2 rounded-r-md truncate pl-3 ${awayColorClass}">${match.awayTeam}</td></tr>`;
-                    tbody.innerHTML += matchRow;
-                    if (isAdmin && isScheduled) {
-                        tbody.innerHTML += `<tr class="${rowColor}"><td colspan="3" class="pb-2 pt-1 px-2 text-center"><div class="flex items-center justify-center gap-2"><input type="number" min="0" id="homeScore-${match.matchId}" class="w-16 bg-gray-200 text-gray-800 text-center rounded border border-gray-300" placeholder="home"><span>-</span><input type="number" min="0" id="awayScore-${match.matchId}" class="w-16 bg-gray-200 text-gray-800 text-center rounded border border-gray-300" placeholder="away"><button onclick="updateScore(${match.matchId})" class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-2 rounded-md font-semibold">Update</button></div></td></tr>`;
-                    }
-                });
-                table.appendChild(tbody);
-                weekContainer.appendChild(table);
-                fixturesList.appendChild(weekContainer);
-            });
-        }
-        
-        function setAdminMode(enabled) {
-            isAdmin = enabled;
-            showLoginBtn.classList.toggle('hidden', enabled);
-            exitAdminBtn.classList.toggle('hidden', !enabled);
-            manageDataBtn.classList.toggle('hidden', !enabled);
-            adminViewHeader.classList.toggle('hidden', !enabled);
-            if (!enabled) managementModal.classList.add('hidden');
-            renderAll();
-        }
-
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            if (document.getElementById('password').value === 'adminganteng') {
-                loginModal.classList.add('hidden'); loginForm.reset(); setAdminMode(true);
-            } else { loginError.classList.remove('hidden'); }
-        });
-        
-        exitAdminBtn.addEventListener('click', () => setAdminMode(false));
-        showLoginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
-        closeLoginBtn.addEventListener('click', () => loginModal.classList.add('hidden'));
-        leagueSelector.addEventListener('change', async (e) => {
-            appData.activeLeagueId = e.target.value; await saveData(); renderAll();
-        });
-
-        function switchMainTab(targetTab) {
-            allTabContents.forEach(c => c.classList.toggle('hidden', c.id !== `tab-content-${targetTab}`));
-            allTabBtns.forEach(b => {
-                const isActive = b.id === `tab-btn-${targetTab}`;
-                b.classList.toggle('border-purple-500', isActive); b.classList.toggle('text-purple-600', isActive);
-                b.classList.toggle('border-transparent', !isActive); b.classList.toggle('text-gray-500', !isActive);
-            });
-        }
-        tabBtnKlasemen.addEventListener('click', () => switchMainTab('klasemen'));
-        tabBtnJadwal.addEventListener('click', () => switchMainTab('jadwal'));
-
-        const mgmtLeaguesList = document.getElementById('leagues-list'), mgmtTeamsList = document.getElementById('teams-list'), mgmtMatchesList = document.getElementById('matches-list');
-        const leagueEditorModal = document.getElementById('league-editor-modal'), leagueEditorTitle = document.getElementById('league-editor-title'), leagueEditorName = document.getElementById('league-editor-name');
-        const existingTeamsChecklist = document.getElementById('existing-teams-checklist'), newTeamsTextarea = document.getElementById('new-teams-textarea'), saveLeagueBtn = document.getElementById('save-league-btn'), cancelLeagueBtn = document.getElementById('cancel-league-btn');
-        let editingLeagueId = null;
-
-        manageDataBtn.addEventListener('click', () => { renderManagementModal(); managementModal.classList.remove('hidden'); });
-        closeManagementBtn.addEventListener('click', () => managementModal.classList.add('hidden'));
-
-        function renderManagementModal() {
-            mgmtLeaguesList.innerHTML = '';
-            appData.leagues.forEach(league => {
-                const activeClass = league.id === appData.activeLeagueId ? 'bg-purple-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800';
-                mgmtLeaguesList.innerHTML += `<div class="${activeClass} p-2 rounded-md flex justify-between items-center"><span class="font-semibold cursor-pointer" onclick="setActiveLeague('${league.id}')">${league.name}</span><div><button onclick="editLeague('${league.id}')" class="text-yellow-500 px-1">✏️</button><button onclick="deleteLeague('${league.id}')" class="text-red-500 px-1">🗑️</button></div></div>`;
-            });
-            const activeLeague = getActiveLeague();
-            mgmtTeamsList.innerHTML = '';
-            if(activeLeague && activeLeague.teams) {
-                activeLeague.teams.forEach(team => { mgmtTeamsList.innerHTML += `<div class="bg-gray-200 p-2 rounded-md flex justify-between items-center"><span>${team}</span><div><button onclick="editTeam('${team}')" class="text-yellow-500 px-1">✏️</button><button onclick="deleteTeam('${team}')" class="text-red-500 px-1">🗑️</button></div></div>`; });
-            }
-            mgmtMatchesList.innerHTML = '';
-            if(activeLeague && activeLeague.matches) {
-                const matchesByWeek = activeLeague.matches.reduce((acc, m) => { (acc[m.pekan] = acc[m.pekan] || []).push(m); return acc; }, {});
-                Object.keys(matchesByWeek).sort((a,b) => a-b).forEach(p => { mgmtMatchesList.innerHTML += `<h4 class="font-bold mt-2 text-gray-500">Pekan ${p}</h4>`; matchesByWeek[p].forEach(m => { mgmtMatchesList.innerHTML += `<div class="bg-gray-200 p-2 rounded-md flex justify-between items-center text-sm"><span>${m.homeTeam} vs ${m.awayTeam}</span><div><button onclick="editMatch(${m.matchId})" class="text-yellow-500 px-1">✏️</button><button onclick="deleteMatch(${m.matchId})" class="text-red-500 px-1">🗑️</button></div></div>`; }); });
-            }
-        }
-        document.querySelectorAll('.tab-btn').forEach(b => { b.addEventListener('click', () => { document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.remove('border-purple-500', 'text-purple-600'); btn.classList.add('border-transparent', 'text-gray-500'); }); b.classList.add('border-purple-500', 'text-purple-600'); document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); document.getElementById(`${b.dataset.tab}-content`).classList.remove('hidden'); }); });
-        
-        window.setActiveLeague = async (id) => { appData.activeLeagueId = id; await saveData(); renderManagementModal(); };
-        function openLeagueEditor(leagueId = null) {
-            editingLeagueId = leagueId;
-            leagueEditorName.value = ''; existingTeamsChecklist.innerHTML = ''; newTeamsTextarea.value = '';
-            const allTeams = new Set();
-            appData.leagues.forEach(l => l.teams.forEach(t => allTeams.add(t)));
-            let leagueToEdit = null;
-            if (leagueId) { leagueEditorTitle.textContent = 'Edit Liga'; leagueToEdit = appData.leagues.find(l => l.id === leagueId); leagueEditorName.value = leagueToEdit.name; } 
-            else { leagueEditorTitle.textContent = 'Tambah Liga Baru'; }
-            allTeams.forEach(teamName => { const isChecked = leagueToEdit && leagueToEdit.teams.includes(teamName) ? 'checked' : ''; existingTeamsChecklist.innerHTML += `<label class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 cursor-pointer"><input type="checkbox" value="${teamName}" ${isChecked} class="form-checkbox bg-gray-200 border-gray-300 text-purple-600 focus:ring-purple-500"><span>${teamName}</span></label>`; });
-            leagueEditorModal.classList.remove('hidden');
-        }
-        document.getElementById('add-league-btn').addEventListener('click', () => openLeagueEditor());
-        cancelLeagueBtn.addEventListener('click', () => leagueEditorModal.classList.add('hidden'));
-        saveLeagueBtn.addEventListener('click', async () => {
-            const name = leagueEditorName.value.trim(); if (!name) { alert('Nama liga tidak boleh kosong.'); return; }
-            const selectedTeams = Array.from(existingTeamsChecklist.querySelectorAll('input:checked')).map(i => i.value);
-            const newTeams = newTeamsTextarea.value.split(',').map(t => t.trim()).filter(t => t.length > 0);
-            const finalTeams = [...new Set([...selectedTeams, ...newTeams])];
-            if (finalTeams.map(t => t.toLowerCase()).includes('libur')) { alert('Nama tim tidak boleh "Libur".'); return; }
-            const generateMatches = document.getElementById('generate-matches-checkbox').checked;
-            if (editingLeagueId) {
-                const league = appData.leagues.find(l => l.id === editingLeagueId);
-                league.name = name;
-                const removedTeams = league.teams.filter(t => !finalTeams.includes(t));
-                if (removedTeams.length > 0) league.matches = league.matches.filter(m => !removedTeams.includes(m.homeTeam) && !removedTeams.includes(m.awayTeam));
-                league.teams = finalTeams;
-                if (generateMatches && (!league.matches.length || confirm('Generate jadwal baru akan menghapus semua pertandingan yang ada. Lanjutkan?'))) league.matches = generateRoundRobinMatches(finalTeams);
-            } else {
-                const newLeague = { id: crypto.randomUUID(), name, teams: finalTeams, matches: [] };
-                if (generateMatches) newLeague.matches = generateRoundRobinMatches(finalTeams);
-                appData.leagues.push(newLeague); appData.activeLeagueId = newLeague.id;
-            }
-            await saveData(); renderAll(); leagueEditorModal.classList.add('hidden');
-        });
-
-        function generateRoundRobinMatches(teams) {
-            const allMatches = []; if (teams.length < 2) return allMatches; let teamList = [...teams]; if (teamList.length % 2 !== 0) teamList.push("Libur");
-            const numTeams = teamList.length, numRounds = numTeams - 1, halfSeasonMatches = [];
-            for (let round = 0; round < numRounds; round++) { for (let i = 0; i < numTeams / 2; i++) halfSeasonMatches.push({ pekan: round + 1, homeTeam: teamList[i], awayTeam: teamList[numTeams - 1 - i] }); teamList.splice(1, 0, teamList.pop()); }
-            halfSeasonMatches.forEach((m, i) => allMatches.push({ ...m, matchId: Date.now() + i, homeScore: null, awayScore: null, status: 'Scheduled' }));
-            halfSeasonMatches.forEach((m, i) => allMatches.push({ pekan: m.pekan + numRounds, homeTeam: m.awayTeam, awayTeam: m.homeTeam, matchId: Date.now() + i + halfSeasonMatches.length, homeScore: null, awayScore: null, status: 'Scheduled' }));
-            return allMatches;
-        }
-
-        window.editLeague = (id) => openLeagueEditor(id);
-        window.deleteLeague = async (id) => { if(confirm('Yakin ingin menghapus liga ini?')) { appData.leagues = appData.leagues.filter(l => l.id !== id); if(appData.activeLeagueId === id) appData.activeLeagueId = appData.leagues.length ? appData.leagues[0].id : null; await saveData(); renderAll(); } };
-        document.getElementById('add-team-btn').addEventListener('click', async () => { const n = prompt('Nama tim baru:'); if(n) { if(n.toLowerCase() === 'libur') { alert('Nama tim tidak boleh "Libur".'); return; } const l = getActiveLeague(); if (l && !l.teams.includes(n)) { l.teams.push(n); await saveData(); renderAll(); } else { alert('Tim sudah ada.'); } } });
-        window.editTeam = async (o) => { const n = prompt('Nama tim baru:', o); if (n && n.toLowerCase() === 'libur') { alert('Nama tim tidak boleh "Libur".'); return; } const l = getActiveLeague(); if (n && n !== o && l) { l.teams = l.teams.map(t => t === o ? n : t); l.matches.forEach(m => { if (m.homeTeam === o) m.homeTeam = n; if (m.awayTeam === o) m.awayTeam = n; }); await saveData(); renderAll(); } };
-        window.deleteTeam = async (n) => { if(confirm(`Hapus tim "${n}"?`)) { const l = getActiveLeague(); if(l){ l.teams = l.teams.filter(t => t !== n); l.matches = l.matches.filter(m => m.homeTeam !== n && m.awayTeam !== n); await saveData(); renderAll(); } } };
-        document.getElementById('add-match-btn').addEventListener('click', async () => { const l = getActiveLeague(); if (!l || l.teams.length < 2) { alert('Tim tidak cukup.'); return; } const p = prompt('Pekan:'); const h = prompt(`Tim kandang:\n${l.teams.join(', ')}`); const a = prompt(`Tim tandang:\n${l.teams.join(', ')}`); if(p && h && a && l.teams.includes(h) && l.teams.includes(a) && h !== a) { l.matches.push({ pekan: parseInt(p), matchId: Date.now(), homeTeam: h, awayTeam: a, homeScore: null, awayScore: null, status: 'Scheduled' }); await saveData(); renderAll(); } else { alert('Input tidak valid.'); } });
-        window.editMatch = (id) => { alert('Fungsi edit pertandingan belum diimplementasikan.'); };
-        window.deleteMatch = async (id) => { if(confirm('Hapus pertandingan ini?')) { const l = getActiveLeague(); if(l){ l.matches = l.matches.filter(m => m.matchId !== id); await saveData(); renderAll(); } } };
-        window.updateScore = async (matchId) => {
-            const homeScore = parseInt(document.getElementById(`homeScore-${matchId}`).value, 10), awayScore = parseInt(document.getElementById(`awayScore-${matchId}`).value, 10);
-            if (isNaN(homeScore) || isNaN(awayScore)) { alert('Skor harus angka.'); return; }
-            const league = getActiveLeague(), match = league.matches.find(m => m.matchId === matchId);
-            if (match) { match.homeScore = homeScore; match.awayScore = awayScore; match.status = 'Finished'; await saveData(); renderAll(); }
         };
 
-        // --- INITIAL LOAD ---
-        function initializeAppAndAuth() {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    userId = user.uid;
-                    await loadData();
+        const initFirebaseAndAuth = async () => {
+            const USER_FIREBASE_CONFIG = { apiKey: "AIzaSyCfikX-HQuKhtSksHzyJwuBF-dUr0ckGRE", authDomain: "wayliga.firebaseapp.com", projectId: "wayliga", storageBucket: "wayliga.firebasestorage.app", messagingSenderId: "178418335963", appId: "1:178418335963:web:a9ff5dadc64fa9cdcf8cfe", measurementId: "G-5QDKCZDL8X" };
+            const currentFirebaseConfig = firebaseConfig || USER_FIREBASE_CONFIG;
+            if (!currentFirebaseConfig) {
+                document.getElementById('app-container').innerHTML = `<div class="card p-8 bg-red-100 text-red-800"><p class="font-bold">Kesalahan Konfigurasi Firebase.</p></div>`;
+                return;
+            }
+            try {
+                app = initializeApp(currentFirebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                await new Promise((resolve) => {
+                    onAuthStateChanged(auth, async (user) => {
+                        if (!user) {
+                            if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
+                            else await signInAnonymously(auth);
+                        }
+                        resolve();
+                    });
+                });
+                listenToLeagueData();
+            } catch (error) {
+                console.error("Kesalahan inisialisasi Firebase:", error);
+                updateConnectionStatus(false, "Gagal memulai aplikasi: " + error.message);
+            }
+        };
+        
+        const updateLeagueTitleUI = (title) => {
+            const leagueTitle = title || 'Way Kanan EFootball League';
+            document.title = leagueTitle; // Update page title
+            const mainHeader = document.getElementById('main-header-title');
+            if (mainHeader) mainHeader.textContent = leagueTitle; // Update H1
+            
+            const leagueNameDisplay = document.getElementById('league-name-display');
+            if(leagueNameDisplay) {
+                leagueNameDisplay.textContent = leagueTitle;
+            }
+        };
+
+        const listenToLeagueData = () => {
+            if (!auth.currentUser) { updateConnectionStatus(false, "Menunggu otentikasi..."); return; }
+            const docRef = getLeagueDocRef(db);
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    leagueData = docSnap.data();
+                    updateLeagueTitleUI(leagueData.title);
+                    renderApp(leagueData);
+                    updateConnectionStatus(true, "Cloud Database terhubung dan sinkron.");
                 } else {
-                    try {
-                        const userCredential = await signInAnonymously(auth);
-                        userId = userCredential.user.uid;
-                        await loadData();
-                    } catch (error) {
-                        console.error("Anonymous sign-in failed", error);
-                        loadingOverlay.innerHTML = '<p class="text-red-500">Gagal terhubung ke server. Coba refresh halaman.</p>';
+                    updateConnectionStatus(true, "Membuat dokumen baru dengan data awal...");
+                    const initialData = getOriginalInitialData();
+                    updateLeagueTitleUI(initialData.title);
+                    saveDataToCloud(initialData);
+                }
+            }, (error) => {
+                console.error("Kesalahan listener Firestore:", error);
+                updateConnectionStatus(false, "Kesalahan koneksi Cloud Database: " + error.message);
+            });
+        };
+        
+        const calculateStandings = (data) => {
+            const standingsMap = new Map(data.teams.map(team => [team.name, { ...team, points: 0, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, diff: 0 }]));
+            data.schedule.forEach(match => {
+                if (match.status === 'Finished' && match.home && match.away) {
+                    const homeTeam = standingsMap.get(match.home);
+                    const awayTeam = standingsMap.get(match.away);
+                    if (!homeTeam || !awayTeam) return;
+                    homeTeam.played++; awayTeam.played++;
+                    homeTeam.goalsFor += match.homeScore; homeTeam.goalsAgainst += match.awayScore;
+                    awayTeam.goalsFor += match.awayScore; awayTeam.goalsAgainst += match.homeScore;
+                    homeTeam.diff = homeTeam.goalsFor - homeTeam.goalsAgainst;
+                    awayTeam.diff = awayTeam.goalsFor - awayTeam.goalsAgainst;
+                    if (match.homeScore > match.awayScore) { homeTeam.points += 3; homeTeam.wins++; awayTeam.losses++; }
+                    else if (match.homeScore < match.awayScore) { awayTeam.points += 3; awayTeam.wins++; homeTeam.losses++; }
+                    else { homeTeam.points += 1; awayTeam.points += 1; homeTeam.draws++; awayTeam.draws++; }
+                }
+            });
+            return Array.from(standingsMap.values()).sort((a, b) => b.points - a.points || b.diff - a.diff || b.goalsFor - a.goalsFor);
+        };
+
+        window.submitScore = async (matchIndex) => {
+            const homeScore = parseInt(document.getElementById(`home-score-${matchIndex}`).value);
+            const awayScore = parseInt(document.getElementById(`away-score-${matchIndex}`).value);
+            if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) { console.error("Skor harus angka positif."); return; }
+            const updatedSchedule = [...leagueData.schedule];
+            updatedSchedule[matchIndex].homeScore = homeScore;
+            updatedSchedule[matchIndex].awayScore = awayScore;
+            updatedSchedule[matchIndex].status = 'Finished';
+            await saveDataToCloud({ ...leagueData, schedule: updatedSchedule, lastUpdated: new Date().toISOString() });
+        };
+        
+        const updateConnectionStatus = (isSuccess, message) => {
+            console.log(`[CLOUD STATUS] ${isSuccess ? 'OK' : 'ERROR'}: ${message}`);
+        };
+
+        const renderStandings = (standings, schedule) => {
+            const standingsHtml = `<div class="fade-in"><h2 class="text-2xl font-bold text-gray-800 mb-4">Klasemen Liga</h2><div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200 dense-table text-xs"><thead class="table-header"><tr><th class="py-2 px-1 rounded-tl-lg text-left">#</th><th class="py-2 px-2 text-left">Klub</th><th class="py-2 px-1">M</th><th class="py-2 px-1">S</th><th class="py-2 px-1">K</th><th class="py-2 px-1">GM</th><th class="py-2 px-1">GA</th><th class="py-2 px-1">P</th><th class="py-2 px-1">SG</th><th class="py-2 px-1 rounded-tr-lg">Pts</th></tr></thead><tbody class="divide-y divide-gray-200">${standings.map((team, index) => `<tr><td class="py-2 px-1 font-medium">${index + 1}</td><td class="py-2 px-2 font-semibold text-gray-900 whitespace-nowrap">${team.name}</td><td class="py-2 px-1 text-center"><span class="bg-green-100 text-green-800 font-bold px-2 py-0.5 rounded-full">${team.wins}</span></td><td class="py-2 px-1 text-center"><span class="bg-gray-200 text-gray-800 font-bold px-2 py-0.5 rounded-full">${team.draws}</span></td><td class="py-2 px-1 text-center"><span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded-full">${team.losses}</span></td><td class="py-2 px-1 text-center">${team.goalsFor}</td><td class="py-2 px-1 text-center">${team.goalsAgainst}</td><td class="py-2 px-1 text-center">${team.played}</td><td class="py-2 px-1 font-bold text-center ${team.diff > 0 ? 'text-green-600' : team.diff < 0 ? 'text-red-600' : ''}">${team.diff}</td><td class="py-2 px-1 font-extrabold text-blue-600 text-center">${team.points}</td></tr>`).join('')}</tbody></table></div><p class="text-xs text-gray-500 mt-2">Ket: P=Main, M=Menang, S=Seri, K=Kalah, GM=Gol Memasukkan, GA=Gol Kemasukan, SG=Selisih Gol, Pts=Poin.</p></div>`;
+            return standingsHtml + '<div class="mt-8 fade-in" style="animation-delay: 100ms;">' + renderNewsAndStats(standings, schedule) + '</div>';
+        };
+
+        const renderMatchSchedule = (schedule) => {
+            const groupedSchedule = schedule.reduce((acc, match) => { (acc[match.babak] = acc[match.babak] || []).push(match); return acc; }, {});
+            return `<h2 class="text-2xl font-bold text-gray-800 mb-4 mt-4">Jadwal Pertandingan</h2><div class="space-y-4">${Object.keys(groupedSchedule).sort((a, b) => a - b).map((babak, index) => `<div class="border-b border-gray-200 pb-2 fade-in" style="animation-delay: ${index * 50}ms"><h3 class="text-lg font-bold text-blue-600 mb-2 border-l-4 border-blue-500 pl-2">Pekan ${babak}</h3><div class="overflow-x-auto w-full"><table class="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden border border-gray-200 dense-table text-xs"><thead class="table-header"><tr><th class="py-2 px-1 w-8">#</th><th class="py-2 px-2 text-left w-1/3">Kandang</th><th class="py-2 px-1 text-center" colspan="3" style="min-width: 70px;">Skor</th><th class="py-2 px-2 text-right w-1/3">Tandang</th></tr></thead><tbody class="bg-white divide-y divide-gray-200">${groupedSchedule[babak].map(match => { if (match.status === 'Bye') return `<tr><td colspan="6" class="bg-yellow-50 text-yellow-800 text-center font-bold py-1 px-2 whitespace-nowrap">TIDAK BERMAIN (BYE): ${match.byeTeam}</td></tr>`; const globalIndex = leagueData.schedule.findIndex(m => m.match === match.match); const isFinished = match.status === 'Finished'; let homeNameClass = 'text-gray-900', awayNameClass = 'text-gray-900'; if(isFinished) { if (match.homeScore > match.awayScore) { homeNameClass = 'text-green-700 font-extrabold'; awayNameClass = 'text-red-500'; } else if (match.homeScore < match.awayScore) { homeNameClass = 'text-red-500'; awayNameClass = 'text-green-700 font-extrabold'; } else { homeNameClass = 'text-blue-600 font-semibold'; awayNameClass = 'text-blue-600 font-semibold'; } } const homeScoreCell = isAdminLoggedIn ? `<input id="home-score-${globalIndex}" type="number" min="0" value="${match.homeScore ?? ''}" class="admin-input-score font-bold text-center">` : `<span class="font-bold ${homeNameClass}">${match.homeScore ?? '-'}</span>`; const awayScoreCell = isAdminLoggedIn ? `<input id="away-score-${globalIndex}" type="number" min="0" value="${match.awayScore ?? ''}" class="admin-input-score font-bold text-center">` : `<span class="font-bold ${awayNameClass}">${match.awayScore ?? '-'}</span>`; const adminSaveButtonRow = isAdminLoggedIn ? `<tr class="bg-gray-50 border-t border-gray-200"><td colspan="6" class="py-1 px-2 text-center"><button onclick="submitScore(${globalIndex})" class="btn-primary text-white font-semibold py-1 px-2 rounded-lg text-xs w-full btn-dense">Simpan Skor</button></td></tr>` : ''; return `<tr><td class="py-2 px-1 font-medium text-center text-gray-500">${match.match || 'N/A'}</td><td class="py-2 px-2 ${homeNameClass} font-semibold text-left whitespace-nowrap">${match.home}</td><td class="admin-input-cell text-center">${homeScoreCell}</td><td class="py-2 px-1 text-center font-bold text-gray-400 text-xs">vs</td><td class="admin-input-cell text-center">${awayScoreCell}</td><td class="py-2 px-2 ${awayNameClass} font-semibold text-right whitespace-nowrap">${match.away}</td></tr>${adminSaveButtonRow}`; }).join('')}</tbody></table></div></div>`).join('')}</div>`;
+        };
+        
+        const getTeamStats = (standings, schedule) => {
+            if (!standings || standings.length === 0) return { topScorer: null, leakyDefense: null, mostConsistent: null };
+            const topScorer = [...standings].sort((a, b) => b.goalsFor - a.goalsFor)[0];
+            const leakyDefense = [...standings].sort((a, b) => b.goalsAgainst - a.goalsAgainst)[0];
+            let longestStreak = { team: null, streak: 0 };
+            standings.forEach(team => {
+                const teamMatches = schedule.filter(m => (m.home === team.name || m.away === team.name) && m.status === 'Finished').sort((a, b) => a.babak - b.babak || a.match - b.match);
+                let currentStreak = 0, maxStreak = 0;
+                teamMatches.forEach(match => {
+                    const isWinner = (match.home === team.name && match.homeScore > match.awayScore) || (match.away === team.name && match.awayScore > match.homeScore);
+                    if (isWinner || match.homeScore === match.awayScore) currentStreak++;
+                    else { maxStreak = Math.max(maxStreak, currentStreak); currentStreak = 0; }
+                });
+                maxStreak = Math.max(maxStreak, currentStreak);
+                if (maxStreak > longestStreak.streak) longestStreak = { team: team.name, streak: maxStreak };
+            });
+            return { topScorer, leakyDefense, mostConsistent: longestStreak };
+        }
+
+        const renderStatsCards = (standings, schedule) => {
+            if (!standings || standings.length < 1 || !standings[0]) return `<div class="card p-4"><p class="text-center">Data tidak cukup untuk menampilkan statistik.</p></div>`;
+            const stats = getTeamStats(standings, schedule);
+            if (!stats.topScorer) return `<div class="card p-4"><p class="text-center">Data tidak cukup untuk menampilkan statistik.</p></div>`;
+            return `<div class="grid grid-cols-2 gap-4"><div class="card p-3 flex flex-col items-center text-center"><svg class="h-10 w-10 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg><h3 class="text-md font-semibold text-gray-700">Serangan Tertajam</h3><p class="text-xl font-bold text-blue-600 mt-1">${stats.topScorer.name}</p><p class="text-lg font-semibold text-gray-900">${stats.topScorer.goalsFor} Gol</p></div><div class="card p-3 flex flex-col items-center text-center"><svg class="h-10 w-10 text-red-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg><h3 class="text-md font-semibold text-gray-700">Pertahanan Rawan</h3><p class="text-xl font-bold text-red-600 mt-1">${stats.leakyDefense.name}</p><p class="text-lg font-semibold text-gray-900">${stats.leakyDefense.goalsAgainst} Kebobolan</p></div><div class="card p-3 flex flex-col items-center text-center"><svg class="h-10 w-10 text-green-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><h3 class="text-md font-semibold text-gray-700">Paling Konsisten</h3><p class="text-xl font-bold text-green-600 mt-1">${stats.mostConsistent.team || 'N/A'}</p><p class="text-lg font-semibold text-gray-900">${stats.mostConsistent.streak} Laga</p></div><div class="card p-3 flex flex-col items-center text-center"><svg class="h-10 w-10 text-yellow-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg><h3 class="text-md font-semibold text-gray-700">Pemuncak Klasemen</h3><p class="text-xl font-bold text-yellow-600 mt-1">${standings[0].name}</p><p class="text-lg font-semibold text-gray-900">${standings[0].points} Poin</p></div></div>`;
+        };
+
+        const renderRandomNews = (standings) => {
+            if (!standings || standings.length < 1) return '';
+            const ptangptengHeadlines = [ "Kontroversi Wasit Kembali Bayangi Kemenangan <strong>Ptangpteng</strong>.", "Desakan Investigasi Menguat, Integritas Laga <strong>Ptangpteng</strong> Dipertanyakan.", "Kemenangan Dramatis <strong>Ptangpteng</strong> Diwarnai Protes Keras.", "Rumor 'Wasit Bayaran' Kembali Terdengar di Pertandingan <strong>Ptangpteng</strong>." ];
+            const generalHeadlines = [ "{teamName} Tunjukkan Taji, Siap Guncang Papan Atas!", "Performa {teamName} Jadi Buah Bibir di Kalangan Fans.", "Manajer {teamName} Optimis Timnya Bisa Juara Musim Ini.", "Penampilan Kurang Konsisten, {teamName} Harus Berbenah.", "{teamName} Sukses Curi Poin Penuh di Kandang Lawan." ];
+            const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
+            let newsItemsHtml = '';
+            const usedHeadlines = new Set();
+            for (let i = 0; i < 3; i++) {
+                const isPtangptengStory = Math.random() < 0.66;
+                let headlineTemplate; let attempts = 0;
+                do {
+                    if (isPtangptengStory) headlineTemplate = getRandomItem(ptangptengHeadlines);
+                    else {
+                        const otherTeams = standings.filter(t => t.name !== 'Ptangpteng');
+                        const randomTeam = otherTeams.length > 0 ? getRandomItem(otherTeams) : standings[0];
+                        headlineTemplate = getRandomItem(generalHeadlines).replace('{teamName}', `<strong>${randomTeam.name}</strong>`);
+                    }
+                    attempts++;
+                } while (usedHeadlines.has(headlineTemplate) && attempts < 10);
+                usedHeadlines.add(headlineTemplate);
+                const iconSvg = isPtangptengStory ? `<svg class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>` : `<svg class="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" /></svg>`;
+                newsItemsHtml += `<div class="flex items-start space-x-3 border-t border-gray-200 py-3 first:pt-0 first:border-0"><div class="flex-shrink-0 mt-1">${iconSvg}</div><p class="text-sm text-gray-800">${headlineTemplate}</p></div>`;
+            }
+            return `<div class="card mt-4"><h3 class="text-xl font-bold text-gray-800 mb-2">Berita Terkini</h3><div>${newsItemsHtml}</div><p class="text-xs text-gray-400 italic mt-4">*Berita ini dibuat secara acak untuk tujuan hiburan.</p></div>`;
+        }
+        
+        const renderNewsAndStats = (standings, schedule) => {
+            return `<h2 class="text-2xl font-bold text-gray-800 mb-4">Sorotan Liga</h2>${renderStatsCards(standings, schedule)}${renderRandomNews(standings)}`;
+        }
+
+        const updateTabUI = (activeTabName) => {
+            const tabs = ['schedule', 'standings'];
+            tabs.forEach(name => {
+                const tabEl = document.getElementById(`tab-${name}`);
+                if (tabEl) {
+                    if (name === activeTabName) {
+                        tabEl.classList.add('border-blue-500', 'text-blue-600');
+                        tabEl.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    } else {
+                        tabEl.classList.remove('border-blue-500', 'text-blue-600');
+                        tabEl.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
                     }
                 }
             });
-        }
+        };
+
+        window.setActiveTab = (tabName) => {
+            currentView = tabName;
+            if (leagueData) renderApp(leagueData);
+            updateTabUI(currentView);
+        };
         
-        initializeAppAndAuth();
+        // --- ADMIN FUNCTIONS ---
+        
+        window.updateLeagueTitle = async () => {
+            const newTitle = document.getElementById('league-title-input').value.trim();
+            if (newTitle) {
+                await saveDataToCloud({ ...leagueData, title: newTitle, lastUpdated: new Date().toISOString() });
+            }
+        };
+        
+        window.resetData = async () => {
+            await saveDataToCloud(getOriginalInitialData());
+        };
+        
+        // --- SCHEDULE GENERATOR ---
+        window.generateSchedule = () => {
+            const teamNamesInput = document.getElementById('generator-team-names').value;
+            const newLeagueTitle = document.getElementById('generator-league-title').value.trim() || 'Liga Baru';
+            let teams = teamNamesInput.split('\n').map(name => name.trim()).filter(name => name.length > 0);
+
+            if (teams.length < 2) {
+                document.getElementById('generator-output').textContent = 'Error: Butuh setidaknya 2 tim.';
+                return;
+            }
+
+            let schedule = [];
+            let matchCounter = 1;
+            
+            // Add a "dummy" team for odd numbers to handle byes
+            if (teams.length % 2 !== 0) {
+                teams.push("dummy"); 
+            }
+            
+            const numTeams = teams.length;
+            const rounds = numTeams - 1;
+
+            for (let round = 0; round < rounds; round++) {
+                for (let i = 0; i < numTeams / 2; i++) {
+                    const home = teams[i];
+                    const away = teams[numTeams - 1 - i];
+
+                    if (home === "dummy" || away === "dummy") {
+                        schedule.push({ status: 'Bye', babak: round + 1, byeTeam: home === "dummy" ? away : home });
+                    } else {
+                        schedule.push({ home: home, away: away, babak: round + 1, match: matchCounter++ });
+                    }
+                }
+                // Rotate teams
+                const lastTeam = teams.pop();
+                teams.splice(1, 0, lastTeam);
+            }
+
+            // Generate second leg (reverse fixtures)
+            const firstLeg = [...schedule];
+            firstLeg.forEach(match => {
+                if (match.status !== 'Bye') {
+                    schedule.push({ home: match.away, away: match.home, babak: match.babak + rounds, match: matchCounter++ });
+                } else {
+                    schedule.push({ status: 'Bye', babak: match.babak + rounds, byeTeam: match.byeTeam });
+                }
+            });
+            
+            const finalSchedule = schedule.map(match => {
+                if (match.status === 'Bye') { return { ...match, home: null, away: null, homeScore: null, awayScore: null, match: null }; }
+                return { ...match, homeScore: null, awayScore: null, status: 'Scheduled' };
+            });
+
+            const originalTeams = teams.filter(t => t !== "dummy");
+            generatedLeagueData = {
+                teams: originalTeams.map(name => ({ name, points: 0, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, diff: 0 })),
+                schedule: finalSchedule,
+                title: newLeagueTitle,
+                lastUpdated: new Date().toISOString()
+            };
+
+            const outputEl = document.getElementById('generator-output');
+            outputEl.textContent = JSON.stringify(generatedLeagueData, null, 2);
+            document.getElementById('start-new-league-btn').classList.remove('hidden');
+        };
+
+        window.startNewLeague = async () => {
+            if (generatedLeagueData) {
+                await saveDataToCloud(generatedLeagueData);
+                generatedLeagueData = null;
+                document.getElementById('generator-output').textContent = 'Liga baru telah dimulai!';
+                document.getElementById('start-new-league-btn').classList.add('hidden');
+            }
+        };
+
+        const renderAdminPanel = (data) => {
+            const lastUpdated = data?.lastUpdated ? new Date(data.lastUpdated).toLocaleString('id-ID') : 'N/A';
+            const leagueTitle = data.title || 'Way Kanan EFootball League';
+
+            return `
+            <div id="admin-panel" class="card admin-section mt-10 p-6 fade-in">
+                <h2 class="text-2xl font-bold text-red-700 mb-4">Panel Admin</h2>
+                <p class="mb-4 text-sm text-red-600">Update Terakhir: <span class="font-bold text-gray-800">${lastUpdated}</span></p>
+                
+                <div class="space-y-6">
+                    <!-- Schedule Generator -->
+                    <div>
+                        <h3 class="font-semibold text-lg text-red-700 border-b border-red-200 pb-2">Generator Jadwal Liga</h3>
+                        <div class="bg-white p-4 rounded-lg shadow-sm mt-2">
+                            <p class="font-medium text-gray-700 mb-2">Nama Liga Baru:</p>
+                            <input type="text" id="generator-league-title" class="w-full p-2 border border-gray-300 rounded-lg mb-3" placeholder="Contoh: Musim 2 EFootball" value="${leagueTitle}">
+                            
+                            <p class="font-medium text-gray-700 mb-2">Daftar Tim (satu per baris):</p>
+                            <textarea id="generator-team-names" rows="10" class="w-full p-2 border border-gray-300 rounded-lg mb-3" placeholder="Tim A\nTim B\nTim C...">${data.teams.map(t => t.name).join('\n')}</textarea>
+                            
+                            <button onclick="generateSchedule()" class="w-full bg-indigo-600 text-white p-2 rounded-lg font-semibold hover:bg-indigo-700 text-sm">Buat Jadwal Baru</button>
+
+                            <div class="mt-4">
+                                <p class="font-medium text-gray-700 mb-2">Hasil Jadwal (JSON):</p>
+                                <pre id="generator-output" class="bg-gray-100 p-2 rounded-lg text-xs overflow-auto h-48 border"></pre>
+                                <button id="start-new-league-btn" onclick="startNewLeague()" class="hidden w-full mt-2 bg-green-600 text-white p-2 rounded-lg font-semibold hover:bg-green-700 text-sm">Mulai Liga Baru dengan Jadwal Ini</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reset Data Section -->
+                    <div>
+                        <h3 class="font-semibold text-lg text-red-700 border-b border-red-200 pb-2">Reset Data</h3>
+                        <div class="bg-white p-4 rounded-lg shadow-sm mt-2">
+                            <p class="text-gray-600 text-sm mb-3">Mengembalikan ke jadwal asli (9 tim).</p>
+                            <button onclick="resetData()" class="w-full bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-yellow-600">Reset Data ke Awal</button>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="hideAdminPanel()" class="mt-6 text-sm text-blue-600 hover:underline">Tutup Panel Admin</button>
+            </div>`;
+        };
+
+        window.showAdminModal = () => document.getElementById('admin-modal').classList.remove('hidden');
+        window.hideAdminModal = () => {
+            const modal = document.getElementById('admin-modal');
+            modal.classList.add('hidden');
+            document.getElementById('admin-password-input').value = '';
+            document.getElementById('admin-login-message').textContent = '';
+        };
+        window.authenticateAdmin = () => {
+            const passwordInput = document.getElementById('admin-password-input');
+            const message = document.getElementById('admin-login-message');
+            if (passwordInput.value === ADMIN_PASSWORD) {
+                hideAdminModal(); 
+                isAdminLoggedIn = true; 
+                renderApp(leagueData);
+            } else {
+                message.textContent = 'Kata sandi salah. Coba lagi.';
+                passwordInput.value = '';
+            }
+        };
+        window.hideAdminPanel = () => {
+            isAdminLoggedIn = false; 
+            renderApp(leagueData);
+        };
+
+        const renderApp = (data) => {
+            const standings = calculateStandings(data);
+            document.getElementById('app-container').innerHTML = `<div class="w-full mb-8">
+                ${currentView === 'schedule' ? renderMatchSchedule(data.schedule) : renderStandings(standings, data.schedule)}
+            </div>${isAdminLoggedIn ? renderAdminPanel(data) : ''}`;
+            updateTabUI(currentView);
+        };
+
+        window.onload = () => {
+            setActiveTab('schedule');
+            initFirebaseAndAuth();
+        };
     </script>
+
+    <!-- UI/UX Aplikasi -->
+    <div class="min-h-screen">
+        <header class="header-bg py-4 mb-4">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                <h1 id="main-header-title" class="text-3xl font-extrabold text-blue-600 tracking-tight">Way Kanan EFootball League</h1>
+                <button onclick="showAdminModal()" class="bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 transition-colors text-sm">Admin</button>
+            </div>
+        </header>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-4">
+            <!-- Penampung Nama Liga -->
+            <div id="league-name-container" class="text-center mb-4 fade-in">
+                 <h2 id="league-name-display" class="text-2xl font-bold text-gray-800 tracking-tight"></h2>
+            </div>
+            <!-- Tombol Tab -->
+            <div class="flex border-b border-gray-200">
+                <button id="tab-schedule" onclick="setActiveTab('schedule')" class="flex-1 py-3 px-3 text-center text-sm font-semibold transition-colors duration-200 border-b-2">Jadwal & Skor</button>
+                <button id="tab-standings" onclick="setActiveTab('standings')" class="flex-1 py-3 px-3 text-center text-sm font-semibold transition-colors duration-200 border-b-2">Klasemen & Statistik</button>
+            </div>
+        </div>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
+            <div id="app-container">
+                <div class="card p-4 text-center">
+                    <svg class="animate-spin h-6 w-6 text-blue-500 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Memuat data...
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Admin Login MODAL -->
+    <div id="admin-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm">
+            <h2 class="text-xl font-bold text-gray-800 mb-3">Akses Admin</h2>
+            <p class="text-sm text-gray-600 mb-4">Masukkan kata sandi admin.</p>
+            <input type="password" id="admin-password-input" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 mb-2 text-sm" placeholder="Kata Sandi">
+            <p id="admin-login-message" class="text-red-500 text-xs h-4 mb-2"></p>
+            <div class="flex space-x-2">
+                <button onclick="authenticateAdmin()" class="flex-grow bg-blue-600 text-white p-2 rounded-lg font-semibold hover:bg-blue-700 text-sm">Masuk</button>
+                <button onclick="hideAdminModal()" class="bg-gray-200 text-gray-800 p-2 rounded-lg font-semibold hover:bg-gray-300 text-sm">Batal</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
 
